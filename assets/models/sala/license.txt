@@ -1,0 +1,11 @@
+Model Information:
+* title:	The Dining Room
+* source:	https://sketchfab.com/3d-models/the-dining-room-da3e970d523a46e4974b2357b6a9538e
+* author:	The Hallwyl Museum (Hallwylska museet) (https://sketchfab.com/TheHallwylMuseum)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "The Dining Room" (https://sketchfab.com/3d-models/the-dining-room-da3e970d523a46e4974b2357b6a9538e) by The Hallwyl Museum (Hallwylska museet) (https://sketchfab.com/TheHallwylMuseum) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

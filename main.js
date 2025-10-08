@@ -1,110 +1,191 @@
-const escena = new THREE.Scene();
-escena.background = new THREE.Color("#2d78c4"); // Azul
-
-// Importar GLTFLoader
 import { GLTFLoader } from './libs/GLTFLoader.js';
 
-// Cámara ortográfica
-const aspect = window.innerWidth / window.innerHeight;
-const frustumSize = 7;
-const camara = new THREE.OrthographicCamera(
-    frustumSize * aspect / -2, // left
-    frustumSize * aspect / 2,  // right
-    frustumSize / 2,           // top
-    frustumSize / -2,          // bottom
-    0.1,                      // near
-    1000                      // far
-);
-camara.position.x = 0;
-camara.position.y = 0;
-camara.position.z = 5;
+// Escena y renderizador
+const escena = new THREE.Scene();
 
-// Renderizador
-const renderizador = new THREE.WebGLRenderer({
-    canvas: document.querySelector("#miCanvas"),
-    antialias: true
-});
-renderizador.setSize(window.innerWidth, window.innerHeight);
+const canvas = document.querySelector('#miCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
+renderer.setClearColor(0x111111);
+renderer.shadowMap.enabled = true;
 
-// Agregar una luz Direccional
-const luz = new THREE.DirectionalLight(0xffffff, 2);
-luz.position.set(5, 5, 5);
-escena.add(luz);
+// Cámara en primera persona (altura de ojos ~1.6m)
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.6, 3);
 
+// Luz puntual tipo "linterna" acoplada a la cámara
+const flashlight = new THREE.PointLight(0xffffff, 1.2, 10, 2);
+flashlight.castShadow = true;
+flashlight.position.set(0, 1.8, 3);
 
-// Cargar el modelo GLTF
-let mixer = null;
-let spiderGLTF = null;
-const spider = new GLTFLoader();
-spider.load(
-    './assets/models/spider/scene.gltf',
-    function (gltf) {
-        // Centrar el modelo en X y Z
-        gltf.scene.position.x = 0;
-        gltf.scene.position.y = 0;
-        gltf.scene.position.z = 0;
-        gltf.scene.rotation.x = 2;
-        gltf.scene.rotation.y = 3;
-        escena.add(gltf.scene);
-        spiderGLTF = gltf.scene;
+// Integrar la cámara con la linterna
+const cameraHolder = new THREE.Object3D();
+cameraHolder.add(camera);
+cameraHolder.add(flashlight);
 
-        // Si hay animaciones, crear el mixer y reproducir la primera
-        if (gltf.animations && gltf.animations.length > 0) {
-            mixer = new THREE.AnimationMixer(gltf.scene);
-            gltf.animations.forEach((clip) => {
-                mixer.clipAction(clip).play();
-            });
-        }
-    },
-    undefined,
-    function (error) {
-        console.error('Error al cargar el modelo GLTF:', error);
-    }
+// Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
+cameraHolder.position.set(0, 0, -4.5);
+cameraHolder.rotation.y = -255;
+escena.add(cameraHolder);
+
+// Cargar modelo de la sala con GLTFLoader (archivo en assets/models/sala/scene.gltf)
+const loader = new GLTFLoader();
+loader.load(
+  './assets/models/sala/scene.gltf',
+  function (gltf) {
+    const sala = gltf.scene;
+    sala.position.set(0, 0, 0);
+    sala.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = false;
+        child.receiveShadow = true;
+      }
+    });
+    escena.add(sala);
+  },
+  undefined,
+  function (err) {
+    console.error('Error cargando sala:', err);
+  }
 );
 
-// Teclas
-const keysPressed = {};
-window.addEventListener('keydown', function (event) {
-    keysPressed[event.code] = true;
+// Controles de movimiento WASD (altura fija)
+const keys = { w: false, a: false, s: false, d: false };
+
+// HUD
+const hud = document.createElement('div');
+hud.style.position = 'absolute';
+hud.style.left = '10px';
+hud.style.top = '10px';
+hud.style.padding = '8px 12px';
+hud.style.background = 'rgba(0,0,0,0.6)';
+hud.style.color = 'white';
+hud.style.fontFamily = 'sans-serif';
+hud.style.zIndex = '999';
+hud.style.borderRadius = '4px';
+hud.innerText = `Click en la pantalla para iniciar los movimientos`;
+document.body.appendChild(hud);
+
+// Eventos de teclado
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (k in keys) {
+    e.preventDefault();
+    keys[k] = true;
+  }
+});
+window.addEventListener('keyup', (e) => {
+  const k = e.key.toLowerCase();
+  if (k in keys) {
+    e.preventDefault();
+    keys[k] = false;
+  }
 });
 
-window.addEventListener('keyup', function (event) {
-    keysPressed[event.code] = false;
-});
+// Movimiento simple: : mover el cameraHolder en el plano XZ manteniendo Y fija
+const speed = 2.5;
+const clock = new THREE.Clock();
 
-// Animación 
-let clock = new THREE.Clock();
-function animar() {
-    requestAnimationFrame(animar);
+function updateMovement(delta) {
+  const forward = new THREE.Vector3();
+  camera.getWorldDirection(forward);
+  forward.y = 0;
+  forward.normalize();
 
-    // Mover el modelo en x si está cargado
-    if (spiderGLTF) {
-        if (keysPressed['ArrowLeft']) {
-            spiderGLTF.rotation.y += 0.01;
-            spiderGLTF.position.x -= 0.01; // Mover a la izquierda
-        }
-        if (keysPressed['ArrowRight']) {
-            spiderGLTF.rotation.y -= 0.01;
-            spiderGLTF.position.x += 0.01; // Mover a la derecha
-        }
-        if (keysPressed['ArrowUp']) {
-            spiderGLTF.position.y += 0.01; // Mover hacia arriba
-        }
-        if (keysPressed['ArrowDown']) {
-            spiderGLTF.position.y -= 0.01; // Mover hacia abajo
-        }
-    }
+  const right = new THREE.Vector3();
+  right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-    // Actualizar animación si existe mixer
-    if (mixer) {
-        let delta = clock.getDelta();
-        mixer.update(delta);
-    }
+  const move = new THREE.Vector3();
+  if (keys.w) move.add(forward);
+  if (keys.s) move.add(forward.clone().negate());
+  if (keys.a) move.add(right.clone().negate());
+  if (keys.d) move.add(right);
 
-    // Llamado al renderizador
-    renderizador.render(escena, camara);
+  if (move.lengthSq() > 0) {
+    move.normalize();
+    move.multiplyScalar(speed * delta);
+    cameraHolder.position.add(move);
+    cameraHolder.position.y = 0;
+  }
 }
 
+// Mouse look
+let yaw = 0;
+let pitch = 0;
+const PI_2 = Math.PI / 2;
+const mouseSensitivity = 0.0025;
+let isPointerLocked = false;
 
+// Solicitar pointer lock al hacer click en el canvas
+canvas.addEventListener('click', () => {
+  canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+  if (canvas.requestPointerLock) canvas.requestPointerLock();
+});
 
-animar();
+document.addEventListener('pointerlockchange', () => {
+  isPointerLocked = document.pointerLockElement === canvas;
+  hud.style.display = isPointerLocked ? 'none' : 'block';
+});
+
+// Soporte para mouse-look sin pointer lock: cuando el cursor esté sobre el canvas
+let mouseOverCanvas = false;
+let lastMouseX = null;
+let lastMouseY = null;
+
+canvas.addEventListener('mouseenter', (e) => {
+  mouseOverCanvas = true;
+  lastMouseX = e.clientX;
+  lastMouseY = e.clientY;
+});
+canvas.addEventListener('mouseleave', () => {
+  mouseOverCanvas = false;
+  lastMouseX = null;
+  lastMouseY = null;
+});
+
+document.addEventListener('mousemove', (event) => {
+  if (isPointerLocked) {
+    yaw -= event.movementX * mouseSensitivity;
+    pitch -= event.movementY * mouseSensitivity;
+  } else if (mouseOverCanvas) {
+    if (lastMouseX === null) {
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+      return;
+    }
+    const dx = event.clientX - lastMouseX;
+    const dy = event.clientY - lastMouseY;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+    yaw -= dx * mouseSensitivity;
+    pitch -= dy * mouseSensitivity;
+  } else return; // No se procesa movimiento si no hay pointer lock ni cursor sobre canvas
+
+  // limitar pitch para no voltear la cámara
+  pitch = Math.max(-PI_2 + 0.01, Math.min(PI_2 - 0.01, pitch));
+
+  // Aplicar rotaciones: yaw al holder (gira horizontal), pitch a la cámara (giro vertical)
+  cameraHolder.rotation.y = yaw;
+  camera.rotation.x = pitch;
+});
+
+// Mantener cámara a la altura de los ojos dentro del holder
+camera.position.set(0, 1.6, 0);
+
+// Resize
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// Animación
+function animate() {
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  updateMovement(delta);
+  renderer.render(escena, camera);
+}
+
+animate();

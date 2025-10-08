@@ -1,0 +1,8 @@
+Model Information:
+* title:	Flathead Screwdriver
+* source:	https://sketchfab.com/3d-models/flathead-screwdriver-47caeec407594d4b8995f4c046e047f4
+* author:	lonesomeducky (https://sketchfab.com/lonesomeducky)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

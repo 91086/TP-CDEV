@@ -12,7 +12,9 @@
   <canvas id="miCanvas"></canvas>
 
   <!-- Código principal con módulos -->
-  <script type="module" src="main.js"></script>
-  <script src="libs/three.min.js"></script> 
+    <!-- Librerías (three y GLTFLoader) deben cargarse antes del script principal -->
+  <script src="libs/three.min.js"></script>
+  <!-- Cargar el script principal como módulo y traer GLTFLoader via import -->
+  <script type="module" src="/main.js"></script>
 </body>
 </html>
