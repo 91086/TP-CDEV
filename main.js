@@ -25,7 +25,7 @@ cameraHolder.add(camera);
 cameraHolder.add(flashlight);
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
-cameraHolder.position.set(0, 0, -4.5);
+cameraHolder.position.set(0, 0, 0); //-3.5 seria la ideal
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
@@ -36,6 +36,7 @@ loader.load(
   function (gltf) {
     const sala = gltf.scene;
     sala.position.set(0, 0, 0);
+    sala.rotation.y = 195.3
     sala.traverse((child) => {
       if (child.isMesh) {
         child.castShadow = false;
@@ -52,6 +53,66 @@ loader.load(
 
 // Controles de movimiento WASD (altura fija)
 const keys = { w: false, a: false, s: false, d: false };
+
+// --- Nuevas variables para Colisión ---
+const playerRadius = 0.5; // Radio aproximado del cilindro del jugador (para no quedar pegado a las paredes)
+const playerBox = new THREE.Box3(); // Caja delimitadora del jugador
+const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
+
+
+// Lista de cajas delimitadoras (Bounding Boxes) para las paredes
+const wallColliders = [
+    
+    // 1. PARED TRASERA
+    new THREE.Box3(new THREE.Vector3(-2.8, 0, -4.2), new THREE.Vector3(2.4, 5, -4.1)), 
+    
+    // 2. PARED FRONTAL
+    new THREE.Box3(new THREE.Vector3(-2.8, 0, 4.8), new THREE.Vector3(2.4, 5, 4.9)), 
+    
+    // 3. PARED DERECHA
+    new THREE.Box3(new THREE.Vector3(2.3, 0, -4.2), new THREE.Vector3(2.4, 5, 4.9)), 
+    
+    // 4. PARED IZQUIERDA
+    new THREE.Box3(new THREE.Vector3(-2.8, 0, -4.2), new THREE.Vector3(-2.7, 5, 4.9)), 
+];
+
+
+// Depuración de Colisiones (Helper Visual)
+// Define el material para que sean visibles
+const materialHelper = new THREE.MeshBasicMaterial({ 
+    //color: 0x00ff00, // Habilitar para que sea visible (TEST) 
+    wireframe: true, 
+    transparent: true, 
+    opacity: 0 // Darle un 0.5 para que sea visible (TEST)
+});
+
+// Agrega todas las cajas de colisión a la escena para visualizarlas
+wallColliders.forEach(box => {
+    // 1. Obtener el tamaño y centro de la caja
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    
+    // 2. Crear una geometría y malla para visualizar la caja
+    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+    const mesh = new THREE.Mesh(geometry, materialHelper);
+    mesh.position.copy(center);
+    escena.add(mesh);
+});
+
+// Visualizar la caja del jugador (Cubo verde)
+const playerHelper = new THREE.Box3Helper(playerBox, );
+playerHelper.visible = false;
+escena.add(playerHelper);
+
+// Función auxiliar para actualizar la caja del jugador
+function updatePlayerBox(position) {
+    playerBox.setFromCenterAndSize(position, playerSize);
+}
+// Inicializar la caja del jugador en su posición inicial
+updatePlayerBox(cameraHolder.position);
+// ------------------------------------
 
 // HUD
 const hud = document.createElement('div');
@@ -84,30 +145,82 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Movimiento simple: : mover el cameraHolder en el plano XZ manteniendo Y fija
-const speed = 2.5;
+const speed = 5; //2.5 NORMAL
 const clock = new THREE.Clock();
 
 function updateMovement(delta) {
-  const forward = new THREE.Vector3();
-  camera.getWorldDirection(forward);
-  forward.y = 0;
-  forward.normalize();
+    if (!isPointerLocked) return;
+    
+    // 1. Calcular el vector de movimiento base
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+    forward.y = 0;
+    forward.normalize();
 
-  const right = new THREE.Vector3();
-  right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+    const right = new THREE.Vector3();
+    right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
-  const move = new THREE.Vector3();
-  if (keys.w) move.add(forward);
-  if (keys.s) move.add(forward.clone().negate());
-  if (keys.a) move.add(right.clone().negate());
-  if (keys.d) move.add(right);
+    const move = new THREE.Vector3();
+    if (keys.w) move.add(forward);
+    if (keys.s) move.add(forward.clone().negate());
+    if (keys.a) move.add(right.clone().negate());
+    if (keys.d) move.add(right);
 
-  if (move.lengthSq() > 0) {
-    move.normalize();
-    move.multiplyScalar(speed * delta);
-    cameraHolder.position.add(move);
-    cameraHolder.position.y = 0;
-  }
+    // Solo procede si hay movimiento
+    if (move.lengthSq() > 0) {
+        move.normalize();
+        const movementVector = move.clone().multiplyScalar(speed * delta);
+        
+        const currentPosition = cameraHolder.position.clone();
+        
+        // --- COLISIÓN EN EJE X ---
+        
+        // Calcular la posición tentativa para el movimiento en X
+        const newPositionX = currentPosition.clone().add(new THREE.Vector3(movementVector.x, 0, 0));
+        
+        // Actualizar la caja del jugador con la posición tentativa X
+        updatePlayerBox(newPositionX); 
+        
+        let collisionX = false;
+        for (const wallBox of wallColliders) {
+            if (playerBox.intersectsBox(wallBox)) {
+                collisionX = true;
+                break;
+            }
+        }
+        
+        // --- COLISIÓN EN EJE Z ---
+        
+        // Calcular la posición tentativa para el movimiento en Z
+        const newPositionZ = currentPosition.clone().add(new THREE.Vector3(0, 0, movementVector.z));
+        
+        // Actualizar la caja del jugador con la posición tentativa Z
+        updatePlayerBox(newPositionZ);
+        
+        let collisionZ = false;
+        for (const wallBox of wallColliders) {
+            if (playerBox.intersectsBox(wallBox)) {
+                collisionZ = true;
+                break;
+            }
+        }
+
+        // --- APLICAR MOVIMIENTO ---
+        
+        // Mover en X solo si no colisionó en X
+        if (!collisionX) {
+            cameraHolder.position.x = newPositionX.x;
+        }
+        
+        // Mover en Z solo si no colisionó en Z
+        if (!collisionZ) {
+            cameraHolder.position.z = newPositionZ.z;
+        }
+        
+        // Mantener la altura fija y actualizar la caja del jugador a la posición final
+        cameraHolder.position.y = 0; 
+        updatePlayerBox(cameraHolder.position);
+    }
 }
 
 // Mouse look
