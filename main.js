@@ -3,9 +3,9 @@ import { loadAssets } from './assetsLoader.js';
 // Escena y renderizador
 const escena = new THREE.Scene();
 
-// Luz ambiental
-//const ambientLight = new THREE.AmbientLight(0xFF0000, 2);
-//escena.add(ambientLight);
+// Luz ambiental (SOLO TEST)
+const ambientLight = new THREE.AmbientLight(0xFF0000, 2);
+escena.add(ambientLight);
 
 // Luz puntual para emergencia
 const pointLight = new THREE.PointLight(0xFF0000, 1, 10);
@@ -24,7 +24,7 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 camera.position.set(0, 1.6, 3);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 1, 0, Math.PI / 4, 0.5, 2);
+const flashlight = new THREE.SpotLight(0xFFFFFF, 2, 5, Math.PI / 4, 0.5, 2);
 flashlight.target.position.set(0, 2, -1);
 flashlight.castShadow = true;
 flashlight.position.set(0, 0.2, 0);
@@ -32,8 +32,6 @@ flashlight.position.set(0, 0.2, 0);
 // Integrar la cámara con la linterna
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
-
-
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
 cameraHolder.position.set(-1.9, 0, -3.6); 
@@ -141,7 +139,6 @@ const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
 const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
 const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
 
-
 // Lista de cajas delimitadoras (Bounding Boxes)
 const wallColliders = [
     
@@ -160,7 +157,6 @@ const wallColliders = [
     // 5. MESA CENTRAL
     new THREE.Box3(new THREE.Vector3(-0.8, 0, -0.8), new THREE.Vector3(0.2, 1, 0.6)),
 ];
-
 
 // Depuración de Colisiones (Helper Visual)
 // Define el material para que sean visibles
