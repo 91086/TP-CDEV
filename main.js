@@ -4,7 +4,7 @@ import { loadAssets } from './assetsLoader.js';
 const escena = new THREE.Scene();
 
 // Luz ambiental
-const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+const ambientLight = new THREE.AmbientLight(0xfdf3c6, 2);
 escena.add(ambientLight);
 
 const canvas = document.querySelector('#miCanvas');
