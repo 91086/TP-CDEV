@@ -32,8 +32,7 @@ flashlight.position.set(0, 0.2, 0);
 // Integrar la cámara con la linterna
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
-cameraHolder.add(flashlight);
-cameraHolder.add(flashlight.target);
+
 
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
@@ -109,20 +108,32 @@ function handleToggleCaja() {
     }
 }
 
-// Animacion del casco 
+// Animacion del casco con la linterna del casco
 function handleToggleCasco() {
     // 1. Verificar si la tecla 'M' está presionada y si aún no se ha procesado
     if (keys.m) {
         if (!mKeyProcessed) {
             mKeyProcessed = true;
             cascoVisible = !cascoVisible;
-            casco.visible = cascoVisible;
-            console.log('Borrando caso de la escena...')
+            if (cascoVisible) {
+                // ESTADO: CASCO VISIBLE (Luz apagada)
+                if (casco) {
+                    casco.visible = true; 
+                }
+                cameraHolder.remove(flashlight);
+                cameraHolder.remove(flashlight.target);
+            } else {
+                // ESTADO: CASCO OCULTO (Luz encendida)
+                if (casco) {
+                    casco.visible = false;
+                }
+                cameraHolder.add(flashlight);
+                cameraHolder.add(flashlight.target);
+            }
         }
     } else {
         mKeyProcessed = false;
     }
-    return mKeyProcessed;
 }
 
 // Variables para Colisión
