@@ -4,8 +4,13 @@ import { loadAssets } from './assetsLoader.js';
 const escena = new THREE.Scene();
 
 // Luz ambiental
-const ambientLight = new THREE.AmbientLight(0xffffff, 3);
-escena.add(ambientLight);
+//const ambientLight = new THREE.AmbientLight(0xFF0000, 2);
+//escena.add(ambientLight);
+
+// Luz puntual para emergencia
+const pointLight = new THREE.PointLight(0xFF0000, 1, 10);
+pointLight.position.set(2, 2.5, 3.8);
+escena.add(pointLight);
 
 const canvas = document.querySelector('#miCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -19,14 +24,16 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 camera.position.set(0, 1.6, 3);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.PointLight(0xffffff, 1.2, 10, 2);
+const flashlight = new THREE.SpotLight(0xFFFFFF, 1, 0, Math.PI / 4, 0.5, 2);
+flashlight.target.position.set(0, 2, -1);
 flashlight.castShadow = true;
-flashlight.position.set(0, 1.8, 3);
+flashlight.position.set(0, 0.2, 0);
 
 // Integrar la cámara con la linterna
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
-cameraHolder.add(flashlight);
+
+
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
 cameraHolder.position.set(-1.9, 0, -3.6); 
@@ -34,15 +41,18 @@ cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
 // Controles de movimiento WASD (V -> Abrir caja de herramientas)
-const keys = { w: false, a: false, s: false, d: false , v:false};
+const keys = { w: false, a: false, s: false, d: false , v:false, m:false};
 
 // Declarar mixer(s) en scope global para actualizar en animate()
 let cajaMixer = null;
 let cajaAction = null;
 let cajaAbierta = false;
 let vKeyProcessed = false;
+let casco = null; 
+let mKeyProcessed = false;
+let cascoVisible = true;
 
-loadAssets(escena).then(({ cajaGltf, cajaHerramientas }) => {
+loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
     const clips = cajaGltf.animations || [];
     if (clips.length > 0) {
         cajaMixer = new THREE.AnimationMixer(cajaHerramientas);
@@ -61,6 +71,8 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas }) => {
             cajaAction.time = 0; 
             cajaAction.play();
             cajaAction.paused = true; 
+
+            casco = cascoGltf.scene;
             
             console.log('Animación de caja configurada.');
         } else {
@@ -73,6 +85,7 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas }) => {
     console.error('Error inicializando assets o animaciones:', err);
 });
 
+// Animacion de la caja de herramientas
 function handleToggleCaja() {
     // 1. Verificar si la tecla 'V' está presionada y si aún no se ha procesado
     if (keys.v) {
@@ -95,6 +108,33 @@ function handleToggleCaja() {
     }
 }
 
+// Animacion del casco con la linterna del casco
+function handleToggleCasco() {
+    // 1. Verificar si la tecla 'M' está presionada y si aún no se ha procesado
+    if (keys.m) {
+        if (!mKeyProcessed) {
+            mKeyProcessed = true;
+            cascoVisible = !cascoVisible;
+            if (cascoVisible) {
+                // ESTADO: CASCO VISIBLE (Luz apagada)
+                if (casco) {
+                    casco.visible = true; 
+                }
+                cameraHolder.remove(flashlight);
+                cameraHolder.remove(flashlight.target);
+            } else {
+                // ESTADO: CASCO OCULTO (Luz encendida)
+                if (casco) {
+                    casco.visible = false;
+                }
+                cameraHolder.add(flashlight);
+                cameraHolder.add(flashlight.target);
+            }
+        }
+    } else {
+        mKeyProcessed = false;
+    }
+}
 
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
@@ -173,7 +213,8 @@ hud.style.zIndex = '999';
 hud.style.borderRadius = '4px';
 hud.innerText = `Click en la pantalla para iniciar los movimientos \n
                 WASD (Para movimientos) \n
-                V (Para abrir caja de herrramientas)`;
+                V (Abrir/Cerrar caja de herrramientas) \n
+                M (Tomar/Soltar casco)`;
 document.body.appendChild(hud);
 
 // Eventos de teclado
@@ -349,6 +390,7 @@ function animate() {
     cajaMixer.update(delta);
   }
   handleToggleCaja(); 
+  handleToggleCasco();
   updateMovement(delta);
   renderer.render(escena, camera);
 }
