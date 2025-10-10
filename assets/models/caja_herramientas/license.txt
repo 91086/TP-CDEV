@@ -1,11 +1,11 @@
 Model Information:
-* title:	Toolbox
-* source:	https://sketchfab.com/3d-models/toolbox-dece4368f8aa42ad902851d1eb292088
-* author:	DudleyLong (https://sketchfab.com/DudleyLong)
+* title:	Tool Box
+* source:	https://sketchfab.com/3d-models/tool-box-6b6e386e8e8546a2962df268c90f969a
+* author:	Medhatelo (https://sketchfab.com/Medhatelo)
 
 Model License:
 * license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
 * requirements:	Author must be credited. Commercial use is allowed.
 
 If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
-This work is based on "Toolbox" (https://sketchfab.com/3d-models/toolbox-dece4368f8aa42ad902851d1eb292088) by DudleyLong (https://sketchfab.com/DudleyLong) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+This work is based on "Tool Box" (https://sketchfab.com/3d-models/tool-box-6b6e386e8e8546a2962df268c90f969a) by Medhatelo (https://sketchfab.com/Medhatelo) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

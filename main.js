@@ -1,7 +1,11 @@
-import { GLTFLoader } from './libs/GLTFLoader.js';
+import { loadAssets } from './assetsLoader.js';
 
 // Escena y renderizador
 const escena = new THREE.Scene();
+
+// Luz ambiental
+const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+escena.add(ambientLight);
 
 const canvas = document.querySelector('#miCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -29,30 +33,68 @@ cameraHolder.position.set(-1.9, 0, -3.6);
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
-// Cargar modelo de la sala con GLTFLoader (archivo en assets/models/sala/scene.gltf)
-const loader = new GLTFLoader();
-loader.load(
-  './assets/models/sala/scene.gltf',
-  function (gltf) {
-    const sala = gltf.scene;
-    sala.position.set(0, 0, 0);
-    sala.rotation.y = 195.3
-    sala.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = false;
-        child.receiveShadow = true;
-      }
-    });
-    escena.add(sala);
-  },
-  undefined,
-  function (err) {
-    console.error('Error cargando sala:', err);
-  }
-);
+// Controles de movimiento WASD (V -> Abrir caja de herramientas)
+const keys = { w: false, a: false, s: false, d: false , v:false};
 
-// Controles de movimiento WASD (altura fija)
-const keys = { w: false, a: false, s: false, d: false };
+// Declarar mixer(s) en scope global para actualizar en animate()
+let cajaMixer = null;
+let cajaAction = null;
+let cajaAbierta = false;
+let vKeyProcessed = false;
+
+loadAssets(escena).then(({ cajaGltf, cajaHerramientas }) => {
+    const clips = cajaGltf.animations || [];
+    if (clips.length > 0) {
+        cajaMixer = new THREE.AnimationMixer(cajaHerramientas);
+
+        let clip = THREE.AnimationClip.findByName(clips, 'Take 001') || clips[0];
+      
+        if (clip) {
+            // 1. Almacenar la acción en la variable global
+            cajaAction = cajaMixer.clipAction(clip);
+            
+            // 2. Configurar la acción para que sea una vez y se mantenga al final
+            cajaAction.loop = THREE.LoopOnce;
+            cajaAction.clampWhenFinished = true;
+            
+            // 3. Establecer el tiempo en 0 y pausar la acción al inicio
+            cajaAction.time = 0; 
+            cajaAction.play();
+            cajaAction.paused = true; 
+            
+            console.log('Animación de caja configurada.');
+        } else {
+            console.log('No se encontró clip "Take 001", clips disponibles:', clips.map(c => c.name));
+        }
+    } else {
+        console.log('No hay animaciones en cajaHerramientas');
+    }
+}).catch(err => {
+    console.error('Error inicializando assets o animaciones:', err);
+});
+
+function handleToggleCaja() {
+    // 1. Verificar si la tecla 'V' está presionada y si aún no se ha procesado
+    if (keys.v) {
+        if (!vKeyProcessed && cajaMixer && cajaAction) {
+            vKeyProcessed = true; // Marca como procesada
+            if (!cajaAbierta) {
+                // ESTADO: Abrir
+                cajaAction.time = 0.5;
+                cajaAction.paused = true;
+                cajaAbierta = true;
+            } else {
+              // ESTADO: Cerrar
+                cajaAction.time = -0.5;
+                cajaAction.paused = false;
+                cajaAbierta = false; 
+            }
+        }
+    } else {
+        vKeyProcessed = false;
+    }
+}
+
 
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
@@ -129,7 +171,9 @@ hud.style.color = 'white';
 hud.style.fontFamily = 'sans-serif';
 hud.style.zIndex = '999';
 hud.style.borderRadius = '4px';
-hud.innerText = `Click en la pantalla para iniciar los movimientos`;
+hud.innerText = `Click en la pantalla para iniciar los movimientos \n
+                WASD (Para movimientos) \n
+                V (Para abrir caja de herrramientas)`;
 document.body.appendChild(hud);
 
 // Eventos de teclado
@@ -301,6 +345,10 @@ window.addEventListener('resize', () => {
 function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
+  if (cajaMixer) {
+    cajaMixer.update(delta);
+  }
+  handleToggleCaja(); 
   updateMovement(delta);
   renderer.render(escena, camera);
 }
