@@ -25,7 +25,7 @@ cameraHolder.add(camera);
 cameraHolder.add(flashlight);
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
-cameraHolder.position.set(0, 0, 0); //-3.5 seria la ideal
+cameraHolder.position.set(-1.9, 0, -3.6); 
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
@@ -54,13 +54,13 @@ loader.load(
 // Controles de movimiento WASD (altura fija)
 const keys = { w: false, a: false, s: false, d: false };
 
-// --- Nuevas variables para Colisión ---
-const playerRadius = 0.5; // Radio aproximado del cilindro del jugador (para no quedar pegado a las paredes)
-const playerBox = new THREE.Box3(); // Caja delimitadora del jugador
+// Variables para Colisión
+const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
+const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
 const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
 
 
-// Lista de cajas delimitadoras (Bounding Boxes) para las paredes
+// Lista de cajas delimitadoras (Bounding Boxes)
 const wallColliders = [
     
     // 1. PARED TRASERA
@@ -73,17 +73,20 @@ const wallColliders = [
     new THREE.Box3(new THREE.Vector3(2.3, 0, -4.2), new THREE.Vector3(2.4, 5, 4.9)), 
     
     // 4. PARED IZQUIERDA
-    new THREE.Box3(new THREE.Vector3(-2.8, 0, -4.2), new THREE.Vector3(-2.7, 5, 4.9)), 
+    new THREE.Box3(new THREE.Vector3(-2.8, 0, -4.2), new THREE.Vector3(-2.7, 5, 4.9)),
+    
+    // 5. MESA CENTRAL
+    new THREE.Box3(new THREE.Vector3(-0.8, 0, -0.8), new THREE.Vector3(0.2, 1, 0.6)),
 ];
 
 
 // Depuración de Colisiones (Helper Visual)
 // Define el material para que sean visibles
 const materialHelper = new THREE.MeshBasicMaterial({ 
-    //color: 0x00ff00, // Habilitar para que sea visible (TEST) 
+    //color: 0x00ff00, // *TEST* // Habilitar para que sea visible
     wireframe: true, 
     transparent: true, 
-    opacity: 0 // Darle un 0.5 para que sea visible (TEST)
+    opacity: 0 // *TEST* // Darle un 0.5 para que sea visible
 });
 
 // Agrega todas las cajas de colisión a la escena para visualizarlas
@@ -101,18 +104,19 @@ wallColliders.forEach(box => {
     escena.add(mesh);
 });
 
-// Visualizar la caja del jugador (Cubo verde)
-const playerHelper = new THREE.Box3Helper(playerBox, );
-playerHelper.visible = false;
-escena.add(playerHelper);
+// *TEST* // Visualizar la caja del jugador (Cubo)
+//const playerHelper = new THREE.Box3Helper(playerBox, );
+//playerHelper.visible = false;
+//escena.add(playerHelper);
 
-// Función auxiliar para actualizar la caja del jugador
+// Función para actualizar la caja del jugador
 function updatePlayerBox(position) {
     playerBox.setFromCenterAndSize(position, playerSize);
 }
+
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
-// ------------------------------------
+
 
 // HUD
 const hud = document.createElement('div');
