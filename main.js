@@ -4,13 +4,22 @@ import { loadAssets } from './assetsLoader.js';
 const escena = new THREE.Scene();
 
 // Luz ambiental reducida
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-escena.add(ambientLight);
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.3);
+escena.add(ambientLightOFF);
+
+// Luz ambiental encendida
+const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
 const pointLight = new THREE.PointLight(0xFF0000, 5, 5);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
+
+// Luz puntual tipo "linterna" acoplada a la cámara
+const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
+flashlight.target.position.set(0, 1.6, 0);
+flashlight.target.position.set(0, 1.6, -10); 
+flashlight.castShadow = true;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -24,12 +33,6 @@ renderer.shadowMap.enabled = true;
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 3);
 
-// Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
-flashlight.target.position.set(0, 1.6, 0);
-flashlight.target.position.set(0, 1.6, -10); 
-flashlight.castShadow = true;
-
 // Integrar la cámara
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
@@ -39,8 +42,8 @@ cameraHolder.position.set(-1.9, 0, -3.6);
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
-// Controles de movimiento WASD (V -> Abrir caja de herramientas)
-const keys = { w: false, a: false, s: false, d: false , v:false, m:false};
+// Teclas usadas para animaciones
+const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false};
 
 // Declarar mixer en scope global para actualizar en animate()
 let cajaMixer = null;
@@ -50,6 +53,8 @@ let vKeyProcessed = false;
 let casco = null; 
 let mKeyProcessed = false;
 let cascoVisible = true;
+let hKeyProcessed = false;
+let luz = false;
 
 loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
     const clips = cajaGltf.animations || [];
@@ -135,6 +140,28 @@ function handleToggleCasco() {
     }
 }
 
+// Animacion de la luz de la sala
+function handleToggleLightRoom() {
+    // 1. Verificar si la tecla 'H' está presionada y si aún no se ha procesado
+    if (keys.h) {
+        if (!hKeyProcessed) {
+            hKeyProcessed = true;
+            luz = !luz;
+            if (luz) {
+                // ESTADO: TERMICA BAJA (Enciendo la luz)
+                escena.remove(ambientLightOFF);
+                escena.add(ambientLightON);
+            } else {
+                // ESTADO: TERMICA ALTA (Apago la luz)
+                escena.remove(ambientLightON);
+                escena.add(ambientLightOFF);
+            }
+        }
+    } else {
+        hKeyProcessed = false;
+    }
+}
+
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
 const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
@@ -181,7 +208,8 @@ hud.style.borderRadius = '4px';
 hud.innerText = `Click en la pantalla para iniciar los movimientos \n
                 WASD (Para movimientos) \n
                 V (Abrir/Cerrar caja de herrramientas) \n
-                M (Tomar/Soltar casco)`;
+                M (Tomar/Soltar casco) \n
+                H (Subir/Bajar termica)`;
 document.body.appendChild(hud);
 
 // Eventos de teclado
@@ -358,6 +386,7 @@ function animate() {
   }
   handleToggleCaja(); 
   handleToggleCasco();
+  handleToggleLightRoom();
   updateMovement(delta);
   renderer.render(escena, camera);
 }
