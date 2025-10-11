@@ -1,35 +1,36 @@
 import { loadAssets } from './assetsLoader.js';
 
-// Escena y renderizador
+// Escena
 const escena = new THREE.Scene();
 
-// Luz ambiental (SOLO TEST)
-const ambientLight = new THREE.AmbientLight(0xFF0000, 2);
+// Luz ambiental reducida
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
 escena.add(ambientLight);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 1, 10);
+const pointLight = new THREE.PointLight(0xFF0000, 5, 5);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
+// Canvas
 const canvas = document.querySelector('#miCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
-renderer.setClearColor(0x111111);
+renderer.setClearColor(0x000000);
 renderer.shadowMap.enabled = true;
 
-// Cámara en primera persona (altura de ojos ~1.6m)
+// Cámara en primera persona
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 3);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 2, 5, Math.PI / 4, 0.5, 2);
-flashlight.target.position.set(0, 2, -1);
+const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
+flashlight.target.position.set(0, 1.6, 0);
+flashlight.target.position.set(0, 1.6, -10); 
 flashlight.castShadow = true;
-flashlight.position.set(0, 0.2, 0);
 
-// Integrar la cámara con la linterna
+// Integrar la cámara
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
 
@@ -41,7 +42,7 @@ escena.add(cameraHolder);
 // Controles de movimiento WASD (V -> Abrir caja de herramientas)
 const keys = { w: false, a: false, s: false, d: false , v:false, m:false};
 
-// Declarar mixer(s) en scope global para actualizar en animate()
+// Declarar mixer en scope global para actualizar en animate()
 let cajaMixer = null;
 let cajaAction = null;
 let cajaAbierta = false;
@@ -158,35 +159,6 @@ const wallColliders = [
     new THREE.Box3(new THREE.Vector3(-0.8, 0, -0.8), new THREE.Vector3(0.2, 1, 0.6)),
 ];
 
-// Depuración de Colisiones (Helper Visual)
-// Define el material para que sean visibles
-const materialHelper = new THREE.MeshBasicMaterial({ 
-    //color: 0x00ff00, // *TEST* // Habilitar para que sea visible
-    wireframe: true, 
-    transparent: true, 
-    opacity: 0 // *TEST* // Darle un 0.5 para que sea visible
-});
-
-// Agrega todas las cajas de colisión a la escena para visualizarlas
-wallColliders.forEach(box => {
-    // 1. Obtener el tamaño y centro de la caja
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    
-    // 2. Crear una geometría y malla para visualizar la caja
-    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-    const mesh = new THREE.Mesh(geometry, materialHelper);
-    mesh.position.copy(center);
-    escena.add(mesh);
-});
-
-// *TEST* // Visualizar la caja del jugador (Cubo)
-//const playerHelper = new THREE.Box3Helper(playerBox, );
-//playerHelper.visible = false;
-//escena.add(playerHelper);
-
 // Función para actualizar la caja del jugador
 function updatePlayerBox(position) {
     playerBox.setFromCenterAndSize(position, playerSize);
@@ -194,7 +166,6 @@ function updatePlayerBox(position) {
 
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
-
 
 // HUD
 const hud = document.createElement('div');
@@ -229,7 +200,7 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
-// Movimiento simple: : mover el cameraHolder en el plano XZ manteniendo Y fija
+// Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
 const speed = 5; //2.5 NORMAL
 const clock = new THREE.Clock();
 

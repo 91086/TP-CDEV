@@ -10,6 +10,23 @@ async function loadGltfModel(path) {
                     if (child.isMesh) {
                         child.castShadow = false;
                         child.receiveShadow = true;
+                        if (child.material) {
+                            const materials = Array.isArray(child.material) ? child.material : [child.material];
+                            materials.forEach(material => {
+                                if (material.isMeshBasicMaterial || material.isMeshPhongMaterial) {
+                                    
+                                    const newMaterial = new THREE.MeshStandardMaterial({
+                                        map: material.map,
+                                        color: material.color.clone(),
+                                        metalness: 0.1,  
+                                        roughness: 0.8,  
+                                    });
+                                    child.material = newMaterial;
+                                    material = newMaterial;
+                                }
+                                material.needsUpdate = true;
+                            });
+                        }
                     }
                 });
                 resolve(gltf);
@@ -40,6 +57,7 @@ export async function loadAssets(escena) {
         
         // 2. Configuración específica de la Sala
         const sala = salaGltf.scene;
+        sala.receiveShadow  = true;
         sala.position.set(0, 0, 0);
         sala.rotation.y = 195.3;
 
