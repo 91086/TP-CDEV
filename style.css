@@ -5,3 +5,26 @@ body {
 canvas {
   display: block;
 }
+
+#game-timer {
+  position: absolute;
+  top: 12px;   
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  color: #ffffff;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  pointer-events: none;
+  z-index: 9999;
+  letter-spacing: 1px;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 480px) {
+  #game-timer { font-size: 16px; padding: 6px 10px; top: 8px; }
+}

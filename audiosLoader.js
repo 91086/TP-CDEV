@@ -15,6 +15,8 @@ function loadAudioBuffer(path) {
 }
 
 export async function loadAudios(listener) {
+    console.log('Iniciando carga de modelos...');
+
     const [cierreBuffer, aperturaBuffer, linternaBuffer, alarmaBuffer] = await Promise.all([
         loadAudioBuffer('./assets/audios/cierreCaja.ogg'),
         loadAudioBuffer('./assets/audios/aperturaCaja.ogg'),
@@ -47,8 +49,7 @@ export async function loadAudios(listener) {
     alarma.setLoop(true);
     alarma.setVolume(1); 
     
-
-    console.log(`Audios cargados y configurados`);
+    console.log(`✓ Audios cargados y configurados`);
     
     return {cierreCaja, aperturaCaja, linterna, alarma};
 }

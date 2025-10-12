@@ -1,5 +1,6 @@
 import { loadAssets } from './assetsLoader.js';
 import { loadAudios } from './audiosLoader.js';
+import { startTimer } from './timer.js';
 
 // Escena
 const escena = new THREE.Scene();
@@ -58,7 +59,6 @@ loadAudios(listener)
         audioCierreCaja = cierreCaja;
         audioLinterna = linterna;
         audioAlarma = alarma;
-        console.log('Audios listos...');
     })
     .catch(err => {
         console.error('Error al cargar audios:', err);
@@ -100,13 +100,12 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
 
             casco = cascoGltf.scene;
             
-            console.log('Animación de caja configurada.');
+            console.log('✓ Animación de caja configurada');
         } else {
             console.log('No se encontró clip "Take 001", clips disponibles:', clips.map(c => c.name));
         }
-    } else {
-        console.log('No hay animaciones en cajaHerramientas');
-    }
+    } 
+
 }).catch(err => {
     console.error('Error inicializando assets o animaciones:', err);
 });
@@ -240,17 +239,24 @@ hud.innerText = `Click en la pantalla para iniciar los movimientos \n
                 WASD (Para movimientos) \n
                 V (Abrir/Cerrar caja de herrramientas) \n
                 M (Tomar/Soltar casco) \n
-                H (Subir/Bajar termica)`;
+                H (Subir/Bajar termica) \n
+                Enter (Iniciar la tarea)`;
 document.body.appendChild(hud);
 
 // Eventos de teclado
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
-  if (k in keys) {
-    e.preventDefault();
-    keys[k] = true;
-  }
+
+    if (e.key === 'Enter') {
+        startTimer();
+    }
+
+    if (k in keys) {
+        e.preventDefault();
+        keys[k] = true;
+    }
 });
+
 window.addEventListener('keyup', (e) => {
   const k = e.key.toLowerCase();
   if (k in keys) {
