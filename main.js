@@ -1,4 +1,5 @@
 import { loadAssets } from './assetsLoader.js';
+import { loadAudios } from './audiosLoader.js';
 
 // Escena
 const escena = new THREE.Scene();
@@ -41,6 +42,27 @@ cameraHolder.add(camera);
 cameraHolder.position.set(-1.9, 0, -3.6); 
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
+
+// Listener (oido de la escena)
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+let audioAperturaCaja = null;
+let audioCierreCaja = null;
+let audioLinterna = null;
+let audioAlarma = null;
+
+loadAudios(listener)
+    .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
+        audioAperturaCaja = aperturaCaja;
+        audioCierreCaja = cierreCaja;
+        audioLinterna = linterna;
+        audioAlarma = alarma;
+        console.log('Audios listos...');
+    })
+    .catch(err => {
+        console.error('Error al cargar audios:', err);
+});
 
 // Teclas usadas para animaciones
 const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false};
@@ -100,11 +122,13 @@ function handleToggleCaja() {
                 cajaAction.time = 0.5;
                 cajaAction.paused = true;
                 cajaAbierta = true;
+                audioAperturaCaja.play();
             } else {
               // ESTADO: Cerrar
                 cajaAction.time = -0.5;
                 cajaAction.paused = false;
                 cajaAbierta = false; 
+                audioCierreCaja.play();
             }
         }
     } else {
@@ -123,6 +147,7 @@ function handleToggleCasco() {
                 // ESTADO: CASCO VISIBLE (Luz apagada)
                 if (casco) {
                     casco.visible = true; 
+                    audioLinterna.play();
                 }
                 cameraHolder.remove(flashlight);
                 cameraHolder.remove(flashlight.target);
@@ -130,6 +155,7 @@ function handleToggleCasco() {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
                     casco.visible = false;
+                    audioLinterna.play();
                 }
                 cameraHolder.add(flashlight);
                 cameraHolder.add(flashlight.target);
@@ -151,10 +177,15 @@ function handleToggleLightRoom() {
                 // ESTADO: TERMICA BAJA (Enciendo la luz)
                 escena.remove(ambientLightOFF);
                 escena.add(ambientLightON);
+                audioAlarma.setLoop(false);
+                
             } else {
                 // ESTADO: TERMICA ALTA (Apago la luz)
                 escena.remove(ambientLightON);
                 escena.add(ambientLightOFF);
+                audioAlarma.setLoop(true);
+                audioAlarma.play();
+            
             }
         }
     } else {
@@ -317,7 +348,10 @@ let isPointerLocked = false;
 // Solicitar pointer lock al hacer click en el canvas
 canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
-  if (canvas.requestPointerLock) canvas.requestPointerLock();
+  if (canvas.requestPointerLock){
+    canvas.requestPointerLock();
+    audioAlarma.play();
+  }
 });
 
 document.addEventListener('pointerlockchange', () => {

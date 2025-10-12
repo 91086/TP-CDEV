@@ -41,7 +41,7 @@ async function loadGltfModel(path) {
 }
 
 export async function loadAssets(escena) {
-    console.log('Iniciando carga de assets...');
+    console.log('Iniciando carga de modelos...');
 
     try {
         // 1. Carga ambos modelos concurrentemente
@@ -104,14 +104,14 @@ export async function loadAssets(escena) {
         escena.add(destornillador);
         escena.add(cinta);
         
-        console.log('Carga de assets finalizada.');
+        console.log('Carga de models finalizada.');
 
         // Devolver referencias útiles (gltf completos)
         return { salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf,
             sala, cajaHerramientas, tablero, luzEmergencia, casco, destornillador, cinta};
 
     } catch (error) {
-        console.error('Fallo al cargar uno o más assets.', error);
+        console.error('Fallo al cargar uno o más models.', error);
         throw error;
     }
 }
