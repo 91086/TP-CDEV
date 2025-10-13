@@ -21,7 +21,6 @@ escena.add(pointLight);
 const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
 flashlight.target.position.set(0, 1.6, 0);
 flashlight.target.position.set(0, 1.6, -10); 
-flashlight.castShadow = true;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -247,6 +246,7 @@ document.body.appendChild(hud);
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
 
+    // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
         startTimer();
     }
@@ -365,38 +365,11 @@ document.addEventListener('pointerlockchange', () => {
   hud.style.display = isPointerLocked ? 'none' : 'block';
 });
 
-// Soporte para mouse-look sin pointer lock: cuando el cursor esté sobre el canvas
-let mouseOverCanvas = false;
-let lastMouseX = null;
-let lastMouseY = null;
-
-canvas.addEventListener('mouseenter', (e) => {
-  mouseOverCanvas = true;
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-});
-canvas.addEventListener('mouseleave', () => {
-  mouseOverCanvas = false;
-  lastMouseX = null;
-  lastMouseY = null;
-});
-
+// Movimiento de mouse
 document.addEventListener('mousemove', (event) => {
   if (isPointerLocked) {
     yaw -= event.movementX * mouseSensitivity;
     pitch -= event.movementY * mouseSensitivity;
-  } else if (mouseOverCanvas) {
-    if (lastMouseX === null) {
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-      return;
-    }
-    const dx = event.clientX - lastMouseX;
-    const dy = event.clientY - lastMouseY;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-    yaw -= dx * mouseSensitivity;
-    pitch -= dy * mouseSensitivity;
   } else return; // No se procesa movimiento si no hay pointer lock ni cursor sobre canvas
 
   // limitar pitch para no voltear la cámara

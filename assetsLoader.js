@@ -107,8 +107,7 @@ export async function loadAssets(escena) {
         console.log('✓ Carga de models finalizada');
 
         // Devolver referencias útiles (gltf completos)
-        return { salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf,
-            sala, cajaHerramientas, tablero, luzEmergencia, casco, destornillador, cinta};
+        return { cajaGltf, cascoGltf, cajaHerramientas };
 
     } catch (error) {
         console.error('Error al cargar uno o más models.', error);
