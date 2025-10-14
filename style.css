@@ -1,9 +1,56 @@
 body {
-  margin: 0;
-  overflow: hidden;
+ margin: 0;
+ height: 100vh;
+ background: radial-gradient(circle at center, #0a0a0a, #000);
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ font-family: "Segoe UI", sans-serif;
+ color: white;
+ overflow: hidden;
 }
-canvas {
-  display: block;
+
+#miCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+}
+
+.start-screen {
+ text-align: center;
+ animation: fadeIn 1.5s ease;
+  position: relative;
+  z-index: 10; 
+}
+
+.game-title {
+ font-size: 3rem;
+ letter-spacing: 2px;
+ margin-bottom: 50px;
+ text-transform: uppercase;
+ color: #e63946;
+ text-shadow: 0 0 10px #e63946, 0 0 30px #ff0000;
+}
+
+#start-btn {
+ font-size: 1.5rem;
+ padding: 15px 40px;
+ border: none;
+ border-radius: 8px;
+ background-color: #1d3557;
+ color: white;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ box-shadow: 0 0 10px #1d3557;
+}
+
+#start-btn:hover {
+ background-color: #457b9d;
+ box-shadow: 0 0 20px #457b9d;
+ transform: scale(1.05);
 }
 
 #game-timer {
@@ -24,7 +71,7 @@ canvas {
   letter-spacing: 1px;
 }
 
-/* Ajustes responsivos */
-@media (max-width: 480px) {
-  #game-timer { font-size: 16px; padding: 6px 10px; top: 8px; }
+@keyframes fadeIn {
+ from { opacity: 0; transform: translateY(-20px); }
+ to { opacity: 1; transform: translateY(0); }
 }

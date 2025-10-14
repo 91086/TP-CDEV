@@ -1,21 +1,46 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CDEV</title>
-  
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDEV</title>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
-  <!-- Canvas donde se renderiza la escena -->
-  <canvas id="miCanvas"></canvas>
+    
+    <canvas id="miCanvas"></canvas>
+    <div id="game-timer" aria-live="polite">Tiempo: 00:10</div>
 
-  <!-- Código principal con módulos -->
-    <!-- Librerías (three y GLTFLoader) deben cargarse antes del script principal -->
-  <script src="libs/three.min.js"></script>
-  <!-- Cargar el script principal como módulo y traer GLTFLoader via import -->
-  <script type="module" src="/main.js"></script>
-  <div id="game-timer" aria-live="polite">00:10</div>
+    <div id="start-screen" class="start-screen">
+        <h1 class="game-title">SE BUSCA NOMBRE...</h1>
+        <button id="start-btn" disabled>START</button> 
+    </div>
+
+    <script src="libs/three.min.js"></script>
+    <script type="module" src="/timer.js"></script> 
+    <script type="module" src="/main.js"></script> 
+
+    <script type="module">
+        import {audioAlarma} from './main.js'
+        const startButton = document.getElementById("start-btn");
+        const gameTitle = document.querySelector(".game-title");
+        const startScreen = document.getElementById("start-screen");
+        const gameTimer = document.getElementById('game-timer');
+        const canvas = document.getElementById("miCanvas");
+        if (startButton.hasAttribute('disabled')) startButton.removeAttribute('disabled');
+
+        startButton.addEventListener("click", () => {
+            if (gameTitle) gameTitle.style.display = 'none';
+            if (startButton) startButton.style.display = 'none';
+            if (startScreen) startScreen.style.display = 'none';
+
+            // Solicitar pointer lock al hacer click en el canvas
+            canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
+            if (canvas.requestPointerLock) {
+                canvas.requestPointerLock();
+                audioAlarma.play();
+            }
+        });
+    </script>
 </body>
 </html>

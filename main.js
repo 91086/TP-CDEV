@@ -50,7 +50,7 @@ camera.add(listener);
 let audioAperturaCaja = null;
 let audioCierreCaja = null;
 let audioLinterna = null;
-let audioAlarma = null;
+export let audioAlarma = null;
 
 loadAudios(listener)
     .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
@@ -223,25 +223,6 @@ function updatePlayerBox(position) {
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
 
-// HUD
-const hud = document.createElement('div');
-hud.style.position = 'absolute';
-hud.style.left = '10px';
-hud.style.top = '10px';
-hud.style.padding = '8px 12px';
-hud.style.background = 'rgba(0,0,0,0.6)';
-hud.style.color = 'white';
-hud.style.fontFamily = 'sans-serif';
-hud.style.zIndex = '999';
-hud.style.borderRadius = '4px';
-hud.innerText = `Click en la pantalla para iniciar los movimientos \n
-                WASD (Para movimientos) \n
-                V (Abrir/Cerrar caja de herrramientas) \n
-                M (Tomar/Soltar casco) \n
-                H (Subir/Bajar termica) \n
-                Enter (Iniciar la tarea)`;
-document.body.appendChild(hud);
-
 // Eventos de teclado
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
@@ -361,8 +342,7 @@ canvas.addEventListener('click', () => {
 });
 
 document.addEventListener('pointerlockchange', () => {
-  isPointerLocked = document.pointerLockElement === canvas;
-  hud.style.display = isPointerLocked ? 'none' : 'block';
+    isPointerLocked = document.pointerLockElement === canvas;
 });
 
 // Movimiento de mouse
@@ -392,16 +372,16 @@ window.addEventListener('resize', () => {
 
 // Animación
 function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  if (cajaMixer) {
-    cajaMixer.update(delta);
-  }
-  handleToggleCaja(); 
-  handleToggleCasco();
-  handleToggleLightRoom();
-  updateMovement(delta);
-  renderer.render(escena, camera);
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    if (cajaMixer) {
+        cajaMixer.update(delta);
+    }
+    handleToggleCaja(); 
+    handleToggleCasco();
+    handleToggleLightRoom();
+    updateMovement(delta);
+    renderer.render(escena, camera);
 }
 
 animate();
