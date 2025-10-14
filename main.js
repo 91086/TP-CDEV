@@ -1,49 +1,72 @@
 import { loadAssets } from './assetsLoader.js';
+import { loadAudios } from './audiosLoader.js';
+import { startTimer } from './timer.js';
 
-// Escena y renderizador
+// Escena
 const escena = new THREE.Scene();
 
-// Luz ambiental
-//const ambientLight = new THREE.AmbientLight(0xFF0000, 2);
-//escena.add(ambientLight);
+// Luz ambiental reducida
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.3);
+escena.add(ambientLightOFF);
+
+// Luz ambiental encendida
+const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 1, 10);
+const pointLight = new THREE.PointLight(0xFF0000, 5, 5);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
+// Luz puntual tipo "linterna" acoplada a la cámara
+const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
+flashlight.target.position.set(0, 1.6, 0);
+flashlight.target.position.set(0, 1.6, -10); 
+
+// Canvas
 const canvas = document.querySelector('#miCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
-renderer.setClearColor(0x111111);
+renderer.setClearColor(0x000000);
 renderer.shadowMap.enabled = true;
 
-// Cámara en primera persona (altura de ojos ~1.6m)
+// Cámara en primera persona
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 3);
 
-// Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 1, 0, Math.PI / 4, 0.5, 2);
-flashlight.target.position.set(0, 2, -1);
-flashlight.castShadow = true;
-flashlight.position.set(0, 0.2, 0);
-
-// Integrar la cámara con la linterna
+// Integrar la cámara
 const cameraHolder = new THREE.Object3D();
 cameraHolder.add(camera);
-
-
 
 // Posición inicial del jugador (En la puerta mas lejana al tablero electrico)
 cameraHolder.position.set(-1.9, 0, -3.6); 
 cameraHolder.rotation.y = -255;
 escena.add(cameraHolder);
 
-// Controles de movimiento WASD (V -> Abrir caja de herramientas)
-const keys = { w: false, a: false, s: false, d: false , v:false, m:false};
+// Listener (oido de la escena)
+const listener = new THREE.AudioListener();
+camera.add(listener);
 
-// Declarar mixer(s) en scope global para actualizar en animate()
+let audioAperturaCaja = null;
+let audioCierreCaja = null;
+let audioLinterna = null;
+export let audioAlarma = null;
+
+loadAudios(listener)
+    .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
+        audioAperturaCaja = aperturaCaja;
+        audioCierreCaja = cierreCaja;
+        audioLinterna = linterna;
+        audioAlarma = alarma;
+    })
+    .catch(err => {
+        console.error('Error al cargar audios:', err);
+});
+
+// Teclas usadas para animaciones
+const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false};
+
+// Declarar mixer en scope global para actualizar en animate()
 let cajaMixer = null;
 let cajaAction = null;
 let cajaAbierta = false;
@@ -51,6 +74,8 @@ let vKeyProcessed = false;
 let casco = null; 
 let mKeyProcessed = false;
 let cascoVisible = true;
+let hKeyProcessed = false;
+let luz = false;
 
 loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
     const clips = cajaGltf.animations || [];
@@ -74,13 +99,12 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
 
             casco = cascoGltf.scene;
             
-            console.log('Animación de caja configurada.');
+            console.log('✓ Animación de caja configurada');
         } else {
             console.log('No se encontró clip "Take 001", clips disponibles:', clips.map(c => c.name));
         }
-    } else {
-        console.log('No hay animaciones en cajaHerramientas');
-    }
+    } 
+
 }).catch(err => {
     console.error('Error inicializando assets o animaciones:', err);
 });
@@ -96,11 +120,13 @@ function handleToggleCaja() {
                 cajaAction.time = 0.5;
                 cajaAction.paused = true;
                 cajaAbierta = true;
+                audioAperturaCaja.play();
             } else {
               // ESTADO: Cerrar
                 cajaAction.time = -0.5;
                 cajaAction.paused = false;
                 cajaAbierta = false; 
+                audioCierreCaja.play();
             }
         }
     } else {
@@ -119,6 +145,7 @@ function handleToggleCasco() {
                 // ESTADO: CASCO VISIBLE (Luz apagada)
                 if (casco) {
                     casco.visible = true; 
+                    audioLinterna.play();
                 }
                 cameraHolder.remove(flashlight);
                 cameraHolder.remove(flashlight.target);
@@ -126,6 +153,7 @@ function handleToggleCasco() {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
                     casco.visible = false;
+                    audioLinterna.play();
                 }
                 cameraHolder.add(flashlight);
                 cameraHolder.add(flashlight.target);
@@ -136,11 +164,37 @@ function handleToggleCasco() {
     }
 }
 
+// Animacion de la luz de la sala
+function handleToggleLightRoom() {
+    // 1. Verificar si la tecla 'H' está presionada y si aún no se ha procesado
+    if (keys.h) {
+        if (!hKeyProcessed) {
+            hKeyProcessed = true;
+            luz = !luz;
+            if (luz) {
+                // ESTADO: TERMICA BAJA (Enciendo la luz)
+                escena.remove(ambientLightOFF);
+                escena.add(ambientLightON);
+                audioAlarma.setLoop(false);
+                
+            } else {
+                // ESTADO: TERMICA ALTA (Apago la luz)
+                escena.remove(ambientLightON);
+                escena.add(ambientLightOFF);
+                audioAlarma.setLoop(true);
+                audioAlarma.play();
+            
+            }
+        }
+    } else {
+        hKeyProcessed = false;
+    }
+}
+
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
 const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
 const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
-
 
 // Lista de cajas delimitadoras (Bounding Boxes)
 const wallColliders = [
@@ -161,36 +215,6 @@ const wallColliders = [
     new THREE.Box3(new THREE.Vector3(-0.8, 0, -0.8), new THREE.Vector3(0.2, 1, 0.6)),
 ];
 
-
-// Depuración de Colisiones (Helper Visual)
-// Define el material para que sean visibles
-const materialHelper = new THREE.MeshBasicMaterial({ 
-    //color: 0x00ff00, // *TEST* // Habilitar para que sea visible
-    wireframe: true, 
-    transparent: true, 
-    opacity: 0 // *TEST* // Darle un 0.5 para que sea visible
-});
-
-// Agrega todas las cajas de colisión a la escena para visualizarlas
-wallColliders.forEach(box => {
-    // 1. Obtener el tamaño y centro de la caja
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    
-    // 2. Crear una geometría y malla para visualizar la caja
-    const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
-    const mesh = new THREE.Mesh(geometry, materialHelper);
-    mesh.position.copy(center);
-    escena.add(mesh);
-});
-
-// *TEST* // Visualizar la caja del jugador (Cubo)
-//const playerHelper = new THREE.Box3Helper(playerBox, );
-//playerHelper.visible = false;
-//escena.add(playerHelper);
-
 // Función para actualizar la caja del jugador
 function updatePlayerBox(position) {
     playerBox.setFromCenterAndSize(position, playerSize);
@@ -199,32 +223,21 @@ function updatePlayerBox(position) {
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
 
-
-// HUD
-const hud = document.createElement('div');
-hud.style.position = 'absolute';
-hud.style.left = '10px';
-hud.style.top = '10px';
-hud.style.padding = '8px 12px';
-hud.style.background = 'rgba(0,0,0,0.6)';
-hud.style.color = 'white';
-hud.style.fontFamily = 'sans-serif';
-hud.style.zIndex = '999';
-hud.style.borderRadius = '4px';
-hud.innerText = `Click en la pantalla para iniciar los movimientos \n
-                WASD (Para movimientos) \n
-                V (Abrir/Cerrar caja de herrramientas) \n
-                M (Tomar/Soltar casco)`;
-document.body.appendChild(hud);
-
 // Eventos de teclado
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
-  if (k in keys) {
-    e.preventDefault();
-    keys[k] = true;
-  }
+
+    // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
+    if (e.key === 'Enter') {
+        startTimer();
+    }
+
+    if (k in keys) {
+        e.preventDefault();
+        keys[k] = true;
+    }
 });
+
 window.addEventListener('keyup', (e) => {
   const k = e.key.toLowerCase();
   if (k in keys) {
@@ -233,7 +246,7 @@ window.addEventListener('keyup', (e) => {
   }
 });
 
-// Movimiento simple: : mover el cameraHolder en el plano XZ manteniendo Y fija
+// Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
 const speed = 5; //2.5 NORMAL
 const clock = new THREE.Clock();
 
@@ -322,46 +335,21 @@ let isPointerLocked = false;
 // Solicitar pointer lock al hacer click en el canvas
 canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
-  if (canvas.requestPointerLock) canvas.requestPointerLock();
+  if (canvas.requestPointerLock){
+    canvas.requestPointerLock();
+    audioAlarma.play();
+  }
 });
 
 document.addEventListener('pointerlockchange', () => {
-  isPointerLocked = document.pointerLockElement === canvas;
-  hud.style.display = isPointerLocked ? 'none' : 'block';
+    isPointerLocked = document.pointerLockElement === canvas;
 });
 
-// Soporte para mouse-look sin pointer lock: cuando el cursor esté sobre el canvas
-let mouseOverCanvas = false;
-let lastMouseX = null;
-let lastMouseY = null;
-
-canvas.addEventListener('mouseenter', (e) => {
-  mouseOverCanvas = true;
-  lastMouseX = e.clientX;
-  lastMouseY = e.clientY;
-});
-canvas.addEventListener('mouseleave', () => {
-  mouseOverCanvas = false;
-  lastMouseX = null;
-  lastMouseY = null;
-});
-
+// Movimiento de mouse
 document.addEventListener('mousemove', (event) => {
   if (isPointerLocked) {
     yaw -= event.movementX * mouseSensitivity;
     pitch -= event.movementY * mouseSensitivity;
-  } else if (mouseOverCanvas) {
-    if (lastMouseX === null) {
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-      return;
-    }
-    const dx = event.clientX - lastMouseX;
-    const dy = event.clientY - lastMouseY;
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-    yaw -= dx * mouseSensitivity;
-    pitch -= dy * mouseSensitivity;
   } else return; // No se procesa movimiento si no hay pointer lock ni cursor sobre canvas
 
   // limitar pitch para no voltear la cámara
@@ -384,15 +372,16 @@ window.addEventListener('resize', () => {
 
 // Animación
 function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  if (cajaMixer) {
-    cajaMixer.update(delta);
-  }
-  handleToggleCaja(); 
-  handleToggleCasco();
-  updateMovement(delta);
-  renderer.render(escena, camera);
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    if (cajaMixer) {
+        cajaMixer.update(delta);
+    }
+    handleToggleCaja(); 
+    handleToggleCasco();
+    handleToggleLightRoom();
+    updateMovement(delta);
+    renderer.render(escena, camera);
 }
 
 animate();
