@@ -6,7 +6,7 @@ import { startTimer } from './timer.js';
 const escena = new THREE.Scene();
 
 // Luz ambiental reducida
-const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.3);
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.2);
 escena.add(ambientLightOFF);
 
 // Luz ambiental encendida
@@ -247,7 +247,7 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
-const speed = 5; //2.5 NORMAL
+const speed = 2.5; //2.5 NORMAL
 const clock = new THREE.Clock();
 
 function updateMovement(delta) {
@@ -370,8 +370,53 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 });
 
+// Carteles flotantes para teclas
+const INTERACTION_DISTANCE = 1; 
+const interactionLabel = document.getElementById('interaction-label');
+
+const INTERACTABLES = {
+    tablero: {
+        pos: new THREE.Vector3(2, 0.5, 3.8),
+        message: "Presione H"
+    },
+    caja: {
+        pos: new THREE.Vector3(-1.9, 0.5, 4.3),
+        message: "Presione V"
+    },
+    casco: {
+        pos: new THREE.Vector3(2.05, -0.7, 2.7),
+        message: "Presione M"
+    }
+};
+
+function checkInteraction() {
+    if (!cameraHolder || !interactionLabel) return; 
+
+    let nearestInteractable = null;
+    let minDistance = Infinity;
+
+    // Iterar y encontrar el objeto más cercano que esté dentro de INTERACTION_DISTANCE
+    for (const key in INTERACTABLES) {
+        const item = INTERACTABLES[key];
+        const distance = cameraHolder.position.distanceTo(item.pos);
+
+        if (distance < minDistance && distance < INTERACTION_DISTANCE) {
+            minDistance = distance;
+            nearestInteractable = item;
+        }
+    }
+
+    if (nearestInteractable) {
+        interactionLabel.textContent = nearestInteractable.message; 
+        interactionLabel.style.display = 'block';
+    } else {
+        interactionLabel.style.display = 'none';
+    }
+}
+
 // Animación
 function animate() {
+    checkInteraction();
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     if (cajaMixer) {
