@@ -147,8 +147,8 @@ function resetAllWires() {
 }
 
 function startOutletTask() {
-    const outletTaskScreen = document.getElementById('outlet-task-screen');
     const miCanvas = document.getElementById('miCanvas');
+    const taskGrid = document.querySelector('.task-grid');
 
     taskActive = true; 
 
@@ -161,9 +161,9 @@ function startOutletTask() {
         miCanvas.style.visibility = 'hidden';
     }
 
-    if (outletTaskScreen) {
-        outletTaskScreen.style.visibility = 'visible';
-        outletTaskScreen.style.display = 'flex';
+    if (taskGrid) {
+        taskGrid.style.display = 'flex';
+        taskGrid.style.visibility = 'visible';
     }
     
     currentConnections = [];
@@ -196,14 +196,14 @@ function checkConnections() {
 }
 
 export function endMission(success) {
-    const outletTaskScreen = document.getElementById('outlet-task-screen');
+    const taskGrid = document.querySelector('.task-grid');
     const miCanvas = document.getElementById('miCanvas');
 
     taskActive = false; 
     
-    if (outletTaskScreen) {
-        outletTaskScreen.style.display = 'none';
-        outletTaskScreen.style.visibility = 'hidden';
+    if (taskGrid) {
+        taskGrid.style.display = 'none';
+        taskGrid.style.visibility = 'hidden';
     }
 
     if (miCanvas) {
