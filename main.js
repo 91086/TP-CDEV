@@ -1,6 +1,13 @@
 import { loadAssets } from './assetsLoader.js';
 import { loadAudios } from './audiosLoader.js';
-import { startTimer } from './timer.js';
+import { startTimer, totalSeconds } from './timer.js';
+import { 
+    checkTaskReadiness, 
+    attemptTaskStart, 
+    setupTaskListeners,
+    taskActive, 
+    endMission
+} from './taskManager.js';
 
 // Escena
 const escena = new THREE.Scene();
@@ -13,14 +20,14 @@ escena.add(ambientLightOFF);
 const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 5, 5);
+const pointLight = new THREE.PointLight(0xFF0000, 5, 3);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
-flashlight.target.position.set(0, 1.6, 0);
-flashlight.target.position.set(0, 1.6, -10); 
+const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
+flashlight.castShadow = true;
+flashlight.target.position.set(0, 0.5, -1); 
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -147,16 +154,16 @@ function handleToggleCasco() {
                     casco.visible = true; 
                     audioLinterna.play();
                 }
-                cameraHolder.remove(flashlight);
-                cameraHolder.remove(flashlight.target);
+                camera.remove(flashlight);
+                camera.remove(flashlight.target);
             } else {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
                     casco.visible = false;
                     audioLinterna.play();
                 }
-                cameraHolder.add(flashlight);
-                cameraHolder.add(flashlight.target);
+                camera.add(flashlight);
+                camera.add(flashlight.target);
             }
         }
     } else {
@@ -229,7 +236,10 @@ window.addEventListener('keydown', (e) => {
 
     // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
-        startTimer();
+        const started = attemptTaskStart();
+        if (started) {
+            startTimer(); // Inicia el timer solo si la tarea fue aceptada
+        }
     }
 
     if (k in keys) {
@@ -326,8 +336,8 @@ function updateMovement(delta) {
 }
 
 // Mouse look
-let yaw = 0;
-let pitch = 0;
+let yaw = cameraHolder.rotation.y; // Para inicar en la misma posicion que la cameraHolder
+let pitch = camera.rotation.x; // Para inicar en la misma posicion que la cameraHolder
 const PI_2 = Math.PI / 2;
 const mouseSensitivity = 0.0025;
 let isPointerLocked = false;
@@ -416,17 +426,29 @@ function checkInteraction() {
 
 // Animación
 function animate() {
-    checkInteraction();
-    requestAnimationFrame(animate);
+    requestAnimationFrame(animate); 
+
+    checkTaskReadiness(cajaAbierta, cascoVisible, luz);
+
+    if (taskActive && totalSeconds <= 0) {
+        endMission(false);
+    }
+    
     const delta = clock.getDelta();
     if (cajaMixer) {
         cajaMixer.update(delta);
     }
+    
     handleToggleCaja(); 
     handleToggleCasco();
     handleToggleLightRoom();
+
     updateMovement(delta);
+    
+    checkInteraction(); 
+
     renderer.render(escena, camera);
 }
 
+setupTaskListeners();
 animate();
