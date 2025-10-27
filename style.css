@@ -208,6 +208,22 @@ body {
 .wire-azul { border: 2px solid #2888c4; background-color: #2888c4; } /* Neutro */
 .wire-verde { border: 4px solid #adbc0c; background-color: #15b763; } /* Tierra */
 
+.electric-shock-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('./assets/images/spark_effect.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 10002;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }

@@ -3,6 +3,8 @@ import { restartTimer } from './timer.js';
 const continueButton = document.getElementById('continue-button');
 const gameOverScreen = document.getElementById('game-over-screen');
 const retryButton = document.getElementById('retry-btn');
+const electricShockEffect = document.getElementById('electric-shock-effect');
+const taskMessage = document.getElementById('task-message');
 
 export let isReadyForTask = false;
 export let taskActive = false;
@@ -140,7 +142,6 @@ function resetAllWires() {
     
     document.querySelectorAll('.terminal').forEach(t => t.style.backgroundColor = '#333'); 
     
-    const taskMessage = document.getElementById('task-message');
     if (taskMessage) {
         taskMessage.textContent = "Arrastre los cables a los terminales correctos. Cuidado con el orden...";
     }
@@ -172,7 +173,6 @@ function startOutletTask() {
 
 // Verifica la secuencia y el resultado
 function checkConnections() {
-    const taskMessage = document.getElementById('task-message');
 
     // Verificar el orden parcial o completo
     let isOrderCorrectPartial = currentConnections.every((wire, index) => wire === CORRECT_SEQUENCE[index]);
@@ -218,8 +218,8 @@ export function endMission(success) {
         }
         if (continueButton) {
             continueButton.style.display = 'block';
+            document.body.requestPointerLock(); 
         }
-        document.body.requestPointerLock(); 
     } else {
         showGameOverScreen();
     }
@@ -235,12 +235,36 @@ export function checkTaskReadiness(cajaAbierta, cascoVisible, luz) {
     isReadyForTask = requiredSetupMet;
 }
 
-export function attemptTaskStart() {
+export function attemptTaskStart(luz) {
+
+    if (luz === true) {
+        triggerElectrocutionEffect();
+        return false;
+    }
+
     if (isReadyForTask) {
         startOutletTask();
         return true; 
     } else {
         return false; 
+    }
+}
+
+// Efecto de electrocucion si se quiere iniciar la tarea y la termica esta encendida
+function triggerElectrocutionEffect() {
+    if (electricShockEffect) {
+        electricShockEffect.style.display = 'block';
+        electricShockEffect.style.opacity = '1';
+
+        // Oculta el efecto después de un corto tiempo
+        setTimeout(() => {
+            electricShockEffect.style.opacity = '0';
+            // Una vez que la transición de opacidad termina, oculta completamente
+            electricShockEffect.addEventListener('transitionend', function handler() {
+                electricShockEffect.style.display = 'none';
+                electricShockEffect.removeEventListener('transitionend', handler);
+            });
+        }, 300); // Muestra el efecto por 0.3 segundos
     }
 }
 

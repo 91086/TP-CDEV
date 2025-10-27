@@ -45,14 +45,15 @@ export async function loadAssets(escena) {
 
     try {
         // 1. Carga ambos modelos concurrentemente
-        const [salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf] = await Promise.all([
+        const [salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf, tomacorrienteGltf] = await Promise.all([
             loadGltfModel('./assets/models/sala/scene.gltf'),
             loadGltfModel('./assets/models/caja_herramientas/scene.gltf'),
             loadGltfModel('./assets/models/tablero/scene.gltf'),
             loadGltfModel('./assets/models/luz_emergencia/scene.gltf'),
             loadGltfModel('./assets/models/casco/scene.gltf'),
             loadGltfModel('./assets/models/destornillador/scene.gltf'),
-            loadGltfModel('./assets/models/cinta/scene.gltf')   
+            loadGltfModel('./assets/models/cinta/scene.gltf'),
+            loadGltfModel('./assets/models/tomacorriente/scene.gltf')    
         ]);
         
         // 2. Configuración específica de la Sala
@@ -94,6 +95,11 @@ export async function loadAssets(escena) {
         cinta.scale.set(0.07, 0.07, 0.07); 
         cinta.position.set(-2.1, 0.56, 4.5);
         cinta.rotation.z = 175
+
+        // 9. Configuración específica del tomacorriente 
+        const tomacorriente = tomacorrienteGltf.scene;
+        tomacorriente.scale.set(0.4, 0.4, 0.4); 
+        tomacorriente.position.set(-0.46, 1.3, -4.4);
         
         // Agregar a la escena
         escena.add(sala);
@@ -103,10 +109,11 @@ export async function loadAssets(escena) {
         escena.add(casco);
         escena.add(destornillador);
         escena.add(cinta);
+        escena.add(tomacorriente);
         
         console.log('✓ Carga de models finalizada');
 
-        // Devolver referencias útiles (gltf completos)
+        // Devolver referencias útiles
         return { cajaGltf, cascoGltf, cajaHerramientas };
 
     } catch (error) {

@@ -236,7 +236,7 @@ window.addEventListener('keydown', (e) => {
 
     // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
-        const started = attemptTaskStart();
+        const started = attemptTaskStart(luz);
         if (started) {
             startTimer(); // Inicia el timer solo si la tarea fue aceptada
         }
@@ -396,10 +396,22 @@ const INTERACTABLES = {
     casco: {
         pos: new THREE.Vector3(2.05, -0.7, 2.7),
         message: "Presione M"
+    },
+    tomacorriente: {
+        pos: new THREE.Vector3(-0.46, 0.5, -3.5),
+        message: "Presione Enter ↵"
     }
 };
 
 function checkInteraction() {
+    // Ocultar los carteles flotantes si se inicio la tarea
+    if (taskActive) {
+        if (interactionLabel) {
+            interactionLabel.style.display = 'none';
+        }
+        return; 
+    }
+
     if (!cameraHolder || !interactionLabel) return; 
 
     let nearestInteractable = null;
