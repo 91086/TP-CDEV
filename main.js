@@ -1,26 +1,33 @@
 import { loadAssets } from './assetsLoader.js';
 import { loadAudios } from './audiosLoader.js';
-import { startTimer } from './timer.js';
+import { startTimer, totalSeconds } from './timer.js';
+import { 
+    checkTaskReadiness, 
+    attemptTaskStart, 
+    setupTaskListeners,
+    taskActive, 
+    endMission
+} from './taskManager.js';
 
 // Escena
 const escena = new THREE.Scene();
 
 // Luz ambiental reducida
-const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.3);
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.2);
 escena.add(ambientLightOFF);
 
 // Luz ambiental encendida
 const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 5, 5);
+const pointLight = new THREE.PointLight(0xFF0000, 5, 3);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
-const flashlight = new THREE.SpotLight(0xFFFFFF, 25, 5, Math.PI / 5, 0.5, 1);
-flashlight.target.position.set(0, 1.6, 0);
-flashlight.target.position.set(0, 1.6, -10); 
+const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
+flashlight.castShadow = true;
+flashlight.target.position.set(0, 0.5, -1); 
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -147,16 +154,16 @@ function handleToggleCasco() {
                     casco.visible = true; 
                     audioLinterna.play();
                 }
-                cameraHolder.remove(flashlight);
-                cameraHolder.remove(flashlight.target);
+                camera.remove(flashlight);
+                camera.remove(flashlight.target);
             } else {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
                     casco.visible = false;
                     audioLinterna.play();
                 }
-                cameraHolder.add(flashlight);
-                cameraHolder.add(flashlight.target);
+                camera.add(flashlight);
+                camera.add(flashlight.target);
             }
         }
     } else {
@@ -229,7 +236,10 @@ window.addEventListener('keydown', (e) => {
 
     // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
-        startTimer();
+        const started = attemptTaskStart(luz);
+        if (started) {
+            startTimer(); // Inicia el timer solo si la tarea fue aceptada
+        }
     }
 
     if (k in keys) {
@@ -247,7 +257,7 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
-const speed = 5; //2.5 NORMAL
+const speed = 2.5; //2.5 NORMAL
 const clock = new THREE.Clock();
 
 function updateMovement(delta) {
@@ -326,8 +336,8 @@ function updateMovement(delta) {
 }
 
 // Mouse look
-let yaw = 0;
-let pitch = 0;
+let yaw = cameraHolder.rotation.y; // Para inicar en la misma posicion que la cameraHolder
+let pitch = camera.rotation.x; // Para inicar en la misma posicion que la cameraHolder
 const PI_2 = Math.PI / 2;
 const mouseSensitivity = 0.0025;
 let isPointerLocked = false;
@@ -370,18 +380,87 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 });
 
+// Carteles flotantes para teclas
+const INTERACTION_DISTANCE = 1; 
+const interactionLabel = document.getElementById('interaction-label');
+
+const INTERACTABLES = {
+    tablero: {
+        pos: new THREE.Vector3(2, 0.5, 3.8),
+        message: "Presione H"
+    },
+    caja: {
+        pos: new THREE.Vector3(-1.9, 0.5, 4.3),
+        message: "Presione V"
+    },
+    casco: {
+        pos: new THREE.Vector3(2.05, -0.7, 2.7),
+        message: "Presione M"
+    },
+    tomacorriente: {
+        pos: new THREE.Vector3(-0.46, 0.5, -3.5),
+        message: "Presione Enter ↵"
+    }
+};
+
+function checkInteraction() {
+    // Ocultar los carteles flotantes si se inicio la tarea
+    if (taskActive) {
+        if (interactionLabel) {
+            interactionLabel.style.display = 'none';
+        }
+        return; 
+    }
+
+    if (!cameraHolder || !interactionLabel) return; 
+
+    let nearestInteractable = null;
+    let minDistance = Infinity;
+
+    // Iterar y encontrar el objeto más cercano que esté dentro de INTERACTION_DISTANCE
+    for (const key in INTERACTABLES) {
+        const item = INTERACTABLES[key];
+        const distance = cameraHolder.position.distanceTo(item.pos);
+
+        if (distance < minDistance && distance < INTERACTION_DISTANCE) {
+            minDistance = distance;
+            nearestInteractable = item;
+        }
+    }
+
+    if (nearestInteractable) {
+        interactionLabel.textContent = nearestInteractable.message; 
+        interactionLabel.style.display = 'block';
+    } else {
+        interactionLabel.style.display = 'none';
+    }
+}
+
 // Animación
 function animate() {
-    requestAnimationFrame(animate);
+    requestAnimationFrame(animate); 
+
+    checkTaskReadiness(cajaAbierta, cascoVisible, luz);
+
+    if (taskActive && totalSeconds <= 0) {
+        endMission(false);
+    }
+    
     const delta = clock.getDelta();
     if (cajaMixer) {
         cajaMixer.update(delta);
     }
+    
     handleToggleCaja(); 
     handleToggleCasco();
     handleToggleLightRoom();
+
     updateMovement(delta);
+    
+    checkInteraction(); 
+
     renderer.render(escena, camera);
 }
 
+setupTaskListeners();
 animate();

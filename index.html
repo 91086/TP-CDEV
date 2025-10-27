@@ -9,12 +9,38 @@
 <body>
     
     <canvas id="miCanvas"></canvas>
-    <div id="game-timer" aria-live="polite">Tiempo: 00:10</div>
+    <div id="game-timer" aria-live="polite"></div>
+
+    <div id="interaction-label" class="interaction-label"></div>
 
     <div id="start-screen" class="start-screen">
-        <h1 class="game-title">SE BUSCA NOMBRE...</h1>
+        <h1 class="game-title">FASE CERO</h1>
         <button id="start-btn" disabled>START</button> 
     </div>
+
+    <div class="task-grid" style="display: none;">
+        <div id="task-message"></div>
+        <div class="outlet-body">
+            <div class="terminal-container australian-style">
+                <div id="terminal-neutro" class="terminal terminal-slot terminal-top-left" data-type="neutro"></div> 
+                <div id="terminal-fase" class="terminal terminal-slot terminal-top-right" data-type="fase"></div>
+                <div id="terminal-tierra" class="terminal terminal-slot terminal-bottom" data-type="tierra"></div>
+            </div>
+        </div>
+        
+        <div class="wire-area">
+            <div id="wire-marrón" class="draggable wire-marrón wire-strip" data-wire="fase"></div>
+            <div id="wire-azul" class="draggable wire-azul wire-strip" data-wire="neutro"></div>
+            <div id="wire-verde" class="draggable wire-verde wire-strip" data-wire="tierra"></div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="start-screen" style="display: none;">
+        <h1 class="game-title">GAME OVER</h1>
+        <button id="retry-btn">RESTART</button>
+    </div>
+
+    <div id="electric-shock-effect" class="electric-shock-effect"></div>
 
     <script src="libs/three.min.js"></script>
     <script type="module" src="/timer.js"></script> 
