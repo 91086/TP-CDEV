@@ -1,3 +1,4 @@
+import Stats from './libs/stats.module.js';
 import { loadAssets } from './assetsLoader.js';
 import { loadAudios } from './audiosLoader.js';
 import { startTimer, totalSeconds } from './timer.js';
@@ -8,6 +9,11 @@ import {
     taskActive, 
     endMission
 } from './taskManager.js';
+
+// Crear el panel de estadísticas
+const stats = new Stats();
+stats.showPanel(0); // 0: fps
+document.body.appendChild(stats.dom);
 
 // Escena
 const escena = new THREE.Scene();
@@ -59,6 +65,7 @@ let audioCierreCaja = null;
 let audioLinterna = null;
 export let audioAlarma = null;
 
+// Carga de audios
 loadAudios(listener)
     .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
         audioAperturaCaja = aperturaCaja;
@@ -84,6 +91,7 @@ let cascoVisible = true;
 let hKeyProcessed = false;
 let luz = false;
 
+// Carga de modelos
 loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
     const clips = cajaGltf.animations || [];
     if (clips.length > 0) {
@@ -403,7 +411,18 @@ const INTERACTABLES = {
     }
 };
 
+// Interaccion con los carteles flotantes
 function checkInteraction() {
+    const gameOverScreen = document.getElementById('game-over-screen');
+
+    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
+    if (gameOverScreen.style.visibility === 'visible'){
+        if (interactionLabel) {
+            interactionLabel.style.display = 'none';
+        }
+        return; 
+    }
+    
     // Ocultar los carteles flotantes si se inicio la tarea
     if (taskActive) {
         if (interactionLabel) {
@@ -459,7 +478,10 @@ function animate() {
     
     checkInteraction(); 
 
+    // Llamado al panel de estadísticas de rendimiento
+    stats.begin();
     renderer.render(escena, camera);
+    stats.end();
 }
 
 setupTaskListeners();
