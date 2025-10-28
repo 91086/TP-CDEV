@@ -5,6 +5,8 @@ const gameOverScreen = document.getElementById('game-over-screen');
 const retryButton = document.getElementById('retry-btn');
 const electricShockEffect = document.getElementById('electric-shock-effect');
 const taskMessage = document.getElementById('task-message');
+const miCanvas = document.getElementById('miCanvas');
+const taskGrid = document.querySelector('.task-grid');
 
 export let isReadyForTask = false;
 export let taskActive = false;
@@ -148,9 +150,6 @@ function resetAllWires() {
 }
 
 function startOutletTask() {
-    const miCanvas = document.getElementById('miCanvas');
-    const taskGrid = document.querySelector('.task-grid');
-
     taskActive = true; 
 
     if (document.pointerLockElement) {
@@ -196,9 +195,6 @@ function checkConnections() {
 }
 
 export function endMission(success) {
-    const taskGrid = document.querySelector('.task-grid');
-    const miCanvas = document.getElementById('miCanvas');
-
     taskActive = false; 
     
     if (taskGrid) {

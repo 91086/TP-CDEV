@@ -32,16 +32,14 @@ escena.add(pointLight);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
 const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
-flashlight.castShadow = true;
 flashlight.target.position.set(0, 0.5, -1); 
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power', precision: 'lowp' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
 renderer.setClearColor(0x000000);
-renderer.shadowMap.enabled = true;
 
 // Cámara en primera persona
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -115,8 +113,6 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
             casco = cascoGltf.scene;
             
             console.log('✓ Animación de caja configurada');
-        } else {
-            console.log('No se encontró clip "Take 001", clips disponibles:', clips.map(c => c.name));
         }
     } 
 
