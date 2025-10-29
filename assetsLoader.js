@@ -114,7 +114,7 @@ export async function loadAssets(escena) {
         console.log('✓ Carga de models finalizada');
 
         // Devolver referencias útiles
-        return { cajaGltf, cascoGltf, cajaHerramientas };
+        return { cajaGltf, cascoGltf, cajaHerramientas, destornilladorGltf, cintaGltf};
 
     } catch (error) {
         console.error('Error al cargar uno o más models.', error);

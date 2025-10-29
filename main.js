@@ -76,22 +76,29 @@ loadAudios(listener)
 });
 
 // Teclas usadas para animaciones
-const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false};
+const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false, p:false };
 
 // Declarar mixer en scope global para actualizar en animate()
-let cajaMixer = null;
-let cajaAction = null;
 let cajaAbierta = false;
 let vKeyProcessed = false;
-let casco = null; 
 let mKeyProcessed = false;
 let cascoVisible = true;
 let hKeyProcessed = false;
 let luz = false;
+let cintaDestornilladorVisible = true;
+let cajaMixer = null;
+let cajaAction = null;
+let casco = null; 
+let cinta = null;
+let destornillador = null;
 
 // Carga de modelos
-loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
+loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf, destornilladorGltf, cintaGltf}) => {
     const clips = cajaGltf.animations || [];
+    cinta = cintaGltf.scene;
+    destornillador = destornilladorGltf.scene;
+    casco = cascoGltf.scene;
+
     if (clips.length > 0) {
         cajaMixer = new THREE.AnimationMixer(cajaHerramientas);
 
@@ -109,8 +116,6 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
             cajaAction.time = 0; 
             cajaAction.play();
             cajaAction.paused = true; 
-
-            casco = cascoGltf.scene;
             
             console.log('✓ Animación de caja configurada');
         }
@@ -122,7 +127,7 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
 
 // Animacion de la caja de herramientas
 function handleToggleCaja() {
-    // 1. Verificar si la tecla 'V' está presionada y si aún no se ha procesado
+    // Verificar si la tecla 'V' está presionada y si aún no se ha procesado
     if (keys.v) {
         if (!vKeyProcessed && cajaMixer && cajaAction) {
             vKeyProcessed = true; // Marca como procesada
@@ -142,6 +147,28 @@ function handleToggleCaja() {
         }
     } else {
         vKeyProcessed = false;
+    }
+}
+
+let pKeyProcessed = false;
+
+// Sacar cinta y destornillador de la caja de herramientas
+function checkToolAction() {
+    if (!cajaAbierta) {
+        pKeyProcessed = false;
+        return; 
+    }
+
+    // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
+    if (keys.p) {
+        if (!pKeyProcessed) {
+            cintaDestornilladorVisible = false;
+            escena.remove(cinta);
+            escena.remove(destornillador);
+            pKeyProcessed = true; 
+        }
+    } else {
+        pKeyProcessed = false;
     }
 }
 
@@ -391,19 +418,23 @@ const interactionLabel = document.getElementById('interaction-label');
 const INTERACTABLES = {
     tablero: {
         pos: new THREE.Vector3(2, 0.5, 3.8),
-        message: "Presione H"
+        message: "Presione H\nSubir/Bajar Térmica"
     },
     caja: {
         pos: new THREE.Vector3(-1.9, 0.5, 4.3),
-        message: "Presione V"
+        message: "Presione V\nAbrir/Cerrar Caja"
+    },
+    cintaDestornillador: {
+        pos: new THREE.Vector3(-1.9, 0.5, 4.3),
+        message: "Presione P\nTomar Herramientas"
     },
     casco: {
         pos: new THREE.Vector3(2.05, -0.7, 2.7),
-        message: "Presione M"
+        message: "Presione M\nPoner/Quitar Casco"
     },
     tomacorriente: {
         pos: new THREE.Vector3(-0.46, 0.5, -3.5),
-        message: "Presione Enter ↵"
+        message: "Presione Enter\nIniciar Reparación"
     }
 };
 
@@ -435,6 +466,17 @@ function checkInteraction() {
     // Iterar y encontrar el objeto más cercano que esté dentro de INTERACTION_DISTANCE
     for (const key in INTERACTABLES) {
         const item = INTERACTABLES[key];
+
+        // Si la caja esta abierta y tiene las herramientas muestra PRESIONE 'P'
+        if ((key === 'caja' && cajaAbierta && cintaDestornilladorVisible)) {
+            continue; 
+        }
+
+        // Si la caja NO tiene la cinta y el destornillador muestra PRESIONE 'V'
+        if (key === 'cintaDestornillador' && !cintaDestornilladorVisible) {
+            continue; 
+        }
+
         const distance = cameraHolder.position.distanceTo(item.pos);
 
         if (distance < minDistance && distance < INTERACTION_DISTANCE) {
@@ -455,7 +497,7 @@ function checkInteraction() {
 function animate() {
     requestAnimationFrame(animate); 
 
-    checkTaskReadiness(cajaAbierta, cascoVisible, luz);
+    checkTaskReadiness(cintaDestornilladorVisible, cascoVisible, luz);
 
     if (taskActive && totalSeconds <= 0) {
         endMission(false);
@@ -467,11 +509,10 @@ function animate() {
     }
     
     handleToggleCaja(); 
+    checkToolAction();
     handleToggleCasco();
     handleToggleLightRoom();
-
     updateMovement(delta);
-    
     checkInteraction(); 
 
     // Llamado al panel de estadísticas de rendimiento

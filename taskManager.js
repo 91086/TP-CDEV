@@ -18,6 +18,7 @@ let currentX, currentY; // Posición actual del mouse
 // ORDEN DE CONEXION: Azul (Neutro), Marrón (Fase), Verde (Tierra)
 const CORRECT_SEQUENCE = ['neutro', 'fase', 'tierra']; 
 let currentConnections = []; // Lo que el jugador ha conectado
+const WIRE_COLORS = { 'neutro': '#2888c4', 'fase': '#804000', 'tierra': '#15b763' }; 
 
 // FUNCIÓN DE INICIALIZACIÓN: Configura listeners de arrastre
 export function setupTaskListeners() {
@@ -115,7 +116,8 @@ function handleConnection(terminalElement) {
 
     if (currentWireType === terminalType) {        
         currentConnections.push(currentWireType);
-        terminalElement.style.backgroundColor = '#08b20bff'; 
+        const connectionColor = WIRE_COLORS[currentWireType]
+        terminalElement.style.backgroundColor = connectionColor;
         draggedElement.style.pointerEvents = 'none'; 
         draggedElement.style.opacity = '0.5';
         draggedElement.style.display = 'none'; 
@@ -222,9 +224,9 @@ export function endMission(success) {
 }
 
 // Check para poder iniciar la tarea
-export function checkTaskReadiness(cajaAbierta, cascoVisible, luz) {
+export function checkTaskReadiness(cintaDestornilladorVisible, cascoVisible, luz) {
     const requiredSetupMet = (
-        cajaAbierta === true && 
+        cintaDestornilladorVisible === false && 
         cascoVisible === false && 
         luz === false 
     );
