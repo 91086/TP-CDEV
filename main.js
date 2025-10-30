@@ -7,7 +7,8 @@ import {
     attemptTaskStart, 
     setupTaskListeners,
     taskActive, 
-    endMission
+    endMission,
+    taskReady
 } from './taskManager.js';
 
 // Crear el panel de estadísticas
@@ -58,18 +59,22 @@ escena.add(cameraHolder);
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
+export let audioAlarma = null;
 let audioAperturaCaja = null;
 let audioCierreCaja = null;
 let audioLinterna = null;
-export let audioAlarma = null;
+let audioChispas = null;
+let audioTomarObjeto = null;
 
 // Carga de audios
 loadAudios(listener)
-    .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
+    .then(({aperturaCaja, cierreCaja, linterna, alarma, chispas, tomarObjeto})=> {
         audioAperturaCaja = aperturaCaja;
         audioCierreCaja = cierreCaja;
         audioLinterna = linterna;
         audioAlarma = alarma;
+        audioChispas = chispas;
+        audioTomarObjeto = tomarObjeto;
     })
     .catch(err => {
         console.error('Error al cargar audios:', err);
@@ -162,6 +167,7 @@ function checkToolAction() {
     // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
     if (keys.p) {
         if (!pKeyProcessed) {
+            audioTomarObjeto.play();
             cintaDestornilladorVisible = false;
             escena.remove(cinta);
             escena.remove(destornillador);
@@ -182,7 +188,7 @@ function handleToggleCasco() {
             if (cascoVisible) {
                 // ESTADO: CASCO VISIBLE (Luz apagada)
                 if (casco) {
-                    casco.visible = true; 
+                    escena.add(casco);
                     audioLinterna.play();
                 }
                 camera.remove(flashlight);
@@ -190,7 +196,7 @@ function handleToggleCasco() {
             } else {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
-                    casco.visible = false;
+                    escena.remove(casco);
                     audioLinterna.play();
                 }
                 camera.add(flashlight);
@@ -210,18 +216,29 @@ function handleToggleLightRoom() {
             hKeyProcessed = true;
             luz = !luz;
             if (luz) {
-                // ESTADO: TERMICA BAJA (Enciendo la luz)
+                // ESTADO: TERMICA BAJA -> ALTA
                 escena.remove(ambientLightOFF);
                 escena.add(ambientLightON);
                 audioAlarma.setLoop(false);
-                
+                audioAlarma.stop();
+                // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
+                if (!taskReady) { 
+                    audioChispas.play();
+                    setTimeout(() => {
+                        escena.remove(ambientLightON);
+                        escena.add(ambientLightOFF);
+                        luz = false; 
+                        audioAlarma.setLoop(true);
+                        audioAlarma.play();
+                        audioChispas.stop();
+                    }, 500);
+                }
             } else {
-                // ESTADO: TERMICA ALTA (Apago la luz)
+                // ESTADO: TERMICA ALTA -> BAJA
                 escena.remove(ambientLightON);
                 escena.add(ambientLightOFF);
                 audioAlarma.setLoop(true);
                 audioAlarma.play();
-            
             }
         }
     } else {
@@ -378,7 +395,6 @@ canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
   if (canvas.requestPointerLock){
     canvas.requestPointerLock();
-    audioAlarma.play();
   }
 });
 

@@ -10,6 +10,7 @@ const taskGrid = document.querySelector('.task-grid');
 
 export let isReadyForTask = false;
 export let taskActive = false;
+export let taskReady = false;
 
 let draggedElement = null; // Elemento actual que se está arrastrando
 let currentWireType = null; // 'fase', 'neutro', o 'tierra'
@@ -198,7 +199,8 @@ function checkConnections() {
 
 export function endMission(success) {
     taskActive = false; 
-    
+    taskReady = false;
+
     if (taskGrid) {
         taskGrid.style.display = 'none';
         taskGrid.style.visibility = 'hidden';
@@ -210,6 +212,7 @@ export function endMission(success) {
     }
     
     if (success) {
+        taskReady = true;
         restartTimer();
         if (taskMessage) {
             taskMessage.textContent = "¡Misión Cumplida!";
