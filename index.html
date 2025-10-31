@@ -9,7 +9,10 @@
 <body>
     
     <canvas id="miCanvas"></canvas>
-    <div id="game-timer" aria-live="polite"></div>
+    
+    <div id="instructions-message" style="display: none;"></div>
+
+    <div id="game-timer" aria-live="polite" style="display: none;"></div>
 
     <div id="interaction-label" class="interaction-label"></div>
 
@@ -47,18 +50,20 @@
     <script type="module" src="/main.js"></script> 
 
     <script type="module">
-        import {audioAlarma} from './main.js'
+        import { audioAlarma, updateGameInstructions } from './main.js';
         const startButton = document.getElementById("start-btn");
         const gameTitle = document.querySelector(".game-title");
         const startScreen = document.getElementById("start-screen");
         const gameTimer = document.getElementById('game-timer');
         const canvas = document.getElementById("miCanvas");
-        if (startButton.hasAttribute('disabled')) startButton.removeAttribute('disabled');
+        
+        if (startButton.hasAttribute('disabled')) startButton.removeAttribute("disabled");
 
         startButton.addEventListener("click", () => {
-            if (gameTitle) gameTitle.style.display = 'none';
-            if (startButton) startButton.style.display = 'none';
-            if (startScreen) startScreen.style.display = 'none';
+            if (gameTitle) gameTitle.style.display = "none";
+            if (startButton) startButton.style.display = "none";
+            if (startScreen) startScreen.style.display = "none";
+            updateGameInstructions('inicioJuego');
 
             // Solicitar pointer lock al hacer click en el canvas
             canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;

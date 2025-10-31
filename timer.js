@@ -29,6 +29,7 @@ export function startTimer() {
     
     timerRunning = true;
     
+    timerDisplay.style.display = 'block';
     timerDisplay.textContent = `${formatTime(totalSeconds)}`; 
     
     timerInterval = setInterval(() => {

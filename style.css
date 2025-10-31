@@ -225,6 +225,30 @@ body {
     transition: opacity 0.3s ease-out;
 }
 
+#instructions-message {
+    position: fixed; 
+    bottom: 5%; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    z-index: 100; 
+    max-width: 80%;
+    min-width: 300px;
+
+    color: #FFEB3B;
+    font-family: "Inter", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 1px 1px 2px #000000;
+    
+    background-color: rgba(0, 0, 0, 0.75); 
+    border-radius: 8px; 
+    border: none;
+    
+    padding: 15px 30px; 
+    white-space: pre-wrap;
+    text-align: center;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }

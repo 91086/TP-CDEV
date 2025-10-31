@@ -11,6 +11,9 @@ import {
     taskReady
 } from './taskManager.js';
 
+// Mensajes de instrucciones de juego sobre el canvas
+const instructionsMessage = document.getElementById('instructions-message');
+
 // Crear el panel de estadísticas
 const stats = new Stats();
 stats.showPanel(0); // 0: fps
@@ -20,7 +23,7 @@ document.body.appendChild(stats.dom);
 const escena = new THREE.Scene();
 
 // Luz ambiental reducida
-const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.2);
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.12);
 escena.add(ambientLightOFF);
 
 // Luz ambiental encendida
@@ -136,6 +139,7 @@ function handleToggleCaja() {
     if (keys.v) {
         if (!vKeyProcessed && cajaMixer && cajaAction) {
             vKeyProcessed = true; // Marca como procesada
+            updateGameInstructions('tomarHerramientas');
             if (!cajaAbierta) {
                 // ESTADO: Abrir
                 cajaAction.time = 0.5;
@@ -167,6 +171,7 @@ function checkToolAction() {
     // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
     if (keys.p) {
         if (!pKeyProcessed) {
+            updateGameInstructions('inicioTarea');
             audioTomarObjeto.play();
             cintaDestornilladorVisible = false;
             escena.remove(cinta);
@@ -185,6 +190,7 @@ function handleToggleCasco() {
         if (!mKeyProcessed) {
             mKeyProcessed = true;
             cascoVisible = !cascoVisible;
+            updateGameInstructions('detectarFalla');
             if (cascoVisible) {
                 // ESTADO: CASCO VISIBLE (Luz apagada)
                 if (casco) {
@@ -215,6 +221,7 @@ function handleToggleLightRoom() {
         if (!hKeyProcessed) {
             hKeyProcessed = true;
             luz = !luz;
+            updateGameInstructions('necesitaCasco');
             if (luz) {
                 // ESTADO: TERMICA BAJA -> ALTA
                 escena.remove(ambientLightOFF);
@@ -232,6 +239,8 @@ function handleToggleLightRoom() {
                         audioAlarma.play();
                         audioChispas.stop();
                     }, 500);
+                } else {
+                    updateGameInstructions('finJuego');
                 }
             } else {
                 // ESTADO: TERMICA ALTA -> BAJA
@@ -284,6 +293,7 @@ window.addEventListener('keydown', (e) => {
 
     // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
+        updateGameInstructions('necesitaHerramientas');
         const started = attemptTaskStart(luz);
         if (started) {
             startTimer(); // Inicia el timer solo si la tarea fue aceptada
@@ -506,6 +516,76 @@ function checkInteraction() {
         interactionLabel.style.display = 'block';
     } else {
         interactionLabel.style.display = 'none';
+    }
+}
+
+// Si la instruccion ya fue mostrada no se volvera a mostrar nuevamente
+let flagIntructions = [false, false, false, false, false, false, false, false]; 
+
+// Mensajes de instrucciones de juego
+export function updateGameInstructions(messageKey) {
+    if (!instructionsMessage) return;
+
+    let messageText = "";
+
+    switch (messageKey) {
+        case 'inicioJuego': // Instruccion 0
+            if(!flagIntructions[0]){
+                messageText = "Intenta restablecer el circuito principal.";
+                flagIntructions[0] = true;
+            }
+            break;
+        case 'necesitaCasco': // Instruccion 1
+            if(!flagIntructions[1]){
+                messageText = "No puedes ver… Necesitas el equipo de seguridad.";
+                flagIntructions[1] = true;
+            }
+            break;
+        case 'detectarFalla': // Instruccion 2
+            if(!flagIntructions[2]){
+                messageText = "Busca el origen de la falla.";
+                flagIntructions[2] = true;
+            }
+            break;
+        case 'necesitaHerramientas': // Instruccion 3
+            if(!flagIntructions[3]){
+                messageText = "Busca las herramientas adecuadas.";
+                flagIntructions[3] = true;
+            }
+            break;
+        case 'tomarHerramientas': // Instruccion 4
+            if(!flagIntructions[4]){
+                messageText = "Un destornillador y una cinta aisladora parecen necesarios.";
+                flagIntructions[4] = true;
+            }
+            break;
+        case 'inicioTarea': // Instruccion 5
+            if(!flagIntructions[5]){
+                messageText = "Inicia la reparación del circuito.";
+                flagIntructions[5] = true;
+            }
+            break;
+        case 'tareaLista': // Instruccion 6
+            if(!flagIntructions[6]){
+                messageText = "Falla resuelta. Restablece el servicio.";
+                flagIntructions[6] = true;
+            }
+            break;
+        case 'finJuego': // Instruccion 7
+            if(!flagIntructions[7]){
+                messageText = "Circuito restablecido con éxito!";
+                flagIntructions[7] = true;
+            }
+            break;
+    }
+
+    instructionsMessage.textContent = messageText;
+
+    // Si no hay mensaje para mostrar se oculta el elemento
+    if (messageText === "") {
+         instructionsMessage.style.display = 'none';
+    } else {
+        instructionsMessage.style.display = 'block';
     }
 }
 

@@ -1,4 +1,5 @@
 import { restartTimer } from './timer.js';
+import { updateGameInstructions } from './main.js';
 
 const continueButton = document.getElementById('continue-button');
 const gameOverScreen = document.getElementById('game-over-screen');
@@ -216,6 +217,7 @@ export function endMission(success) {
         restartTimer();
         if (taskMessage) {
             taskMessage.textContent = "¡Misión Cumplida!";
+            updateGameInstructions('tareaLista');
         }
         if (continueButton) {
             continueButton.style.display = 'block';
@@ -223,6 +225,7 @@ export function endMission(success) {
         }
     } else {
         showGameOverScreen();
+        instructionsMessage.textContent = "";
     }
 }
 
@@ -244,6 +247,7 @@ export function attemptTaskStart(luz) {
     }
 
     if (isReadyForTask) {
+        updateGameInstructions("");
         startOutletTask();
         return true; 
     } else {
