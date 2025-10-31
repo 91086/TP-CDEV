@@ -30,13 +30,18 @@ escena.add(ambientLightOFF);
 const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 5, 3);
+const pointLight = new THREE.PointLight(0xff0000, 5, 3);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
 const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
-flashlight.target.position.set(0, 0.5, -1); 
+flashlight.target.position.set(0, 0.5, -1);
+
+// Luz puntual para "efecto chispazo"
+const flashLight = new THREE.PointLight(0xffffff, 100, 1.5);
+flashLight.position.set(-0.46, 1.3, -4.4);
+flashLight.visible = false;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -231,6 +236,8 @@ function handleToggleLightRoom() {
                 // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
                 if (!taskReady) { 
                     audioChispas.play();
+                    escena.add(flashLight); //
+                    flashLight.visible = true; //
                     setTimeout(() => {
                         escena.remove(ambientLightON);
                         escena.add(ambientLightOFF);
@@ -239,6 +246,9 @@ function handleToggleLightRoom() {
                         audioAlarma.play();
                         audioChispas.stop();
                     }, 500);
+                    setTimeout(() => {
+                        flashLight.visible = false;
+                    }, 600);
                 } else {
                     updateGameInstructions('finJuego');
                 }
@@ -543,7 +553,7 @@ export function updateGameInstructions(messageKey) {
             break;
         case 'detectarFalla': // Instruccion 2
             if(!flagIntructions[2]){
-                messageText = "Busca el origen de la falla.";
+                messageText = "El chispazo no provino del panel. Busca el origen de la falla.";
                 flagIntructions[2] = true;
             }
             break;
