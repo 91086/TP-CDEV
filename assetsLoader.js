@@ -108,8 +108,6 @@ export async function loadAssets(escena) {
         escena.add(tablero);
         escena.add(luzEmergencia);
         escena.add(casco);
-        escena.add(destornillador);
-        escena.add(cinta);
         escena.add(tomacorriente);
         
         console.log('✓ Carga de models finalizada');

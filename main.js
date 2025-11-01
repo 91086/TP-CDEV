@@ -116,7 +116,7 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf, destornillador
         cajaMixer = new THREE.AnimationMixer(cajaHerramientas);
 
         let clip = THREE.AnimationClip.findByName(clips, 'Take 001') || clips[0];
-      
+
         if (clip) {
             // 1. Almacenar la acción en la variable global
             cajaAction = cajaMixer.clipAction(clip);
@@ -147,12 +147,18 @@ function handleToggleCaja() {
             updateGameInstructions('tomarHerramientas');
             if (!cajaAbierta) {
                 // ESTADO: Abrir
+                if(cintaDestornilladorVisible){
+                    escena.add(cinta);
+                    escena.add(destornillador);
+                }
                 cajaAction.time = 0.5;
                 cajaAction.paused = true;
                 cajaAbierta = true;
                 audioAperturaCaja.play();
             } else {
               // ESTADO: Cerrar
+                escena.remove(cinta);
+                escena.remove(destornillador);
                 cajaAction.time = -0.5;
                 cajaAction.paused = false;
                 cajaAbierta = false; 
