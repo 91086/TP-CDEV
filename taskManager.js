@@ -13,9 +13,9 @@ export let isReadyForTask = false;
 export let taskActive = false;
 export let taskReady = false;
 
-let draggedElement = null; // Elemento actual que se está arrastrando
-let currentWireType = null; // 'fase', 'neutro', o 'tierra'
-let currentX, currentY; // Posición actual del mouse
+let draggedElement = null;
+let currentWireType = null;
+let currentX, currentY;
 
 // ORDEN DE CONEXION: Azul (Neutro), Marrón (Fase), Verde (Tierra)
 const CORRECT_SEQUENCE = ['neutro', 'fase', 'tierra']; 
@@ -24,19 +24,21 @@ const WIRE_COLORS = { 'neutro': '#2888c4', 'fase': '#804000', 'tierra': '#15b763
 
 // FUNCIÓN DE INICIALIZACIÓN: Configura listeners de arrastre
 export function setupTaskListeners() {
-    // 1. Obtener todos los cables arrastrables y añadir mousedown listener
+
+    // Obtener todos los cables arrastrables y añadir mousedown listener
     const draggables = document.querySelectorAll('.draggable');
     draggables.forEach(wire => {
         wire.addEventListener('mousedown', startDrag);
     });
 
-    // 2. Eventos globales de mouseup y mousemove (para gestionar el arrastre en todo el documento)
+    // Eventos globales de mouseup y mousemove (para gestionar el arrastre en todo el documento)
     document.addEventListener('mousemove', drag);
     document.addEventListener('mouseup', endDrag);
 
     
 }
 
+// Iniciar el arrastre de los cables a los terminales
 function startDrag(e) {
     if (!taskActive || e.button !== 0) return; 
     e.preventDefault(); 
@@ -63,6 +65,7 @@ function startDrag(e) {
     draggedElement.style.top = rect.top + 'px';
 }
 
+// Mover los cables mientras haya uno activo (draggedElement)
 function drag(e) {
     if (!draggedElement) return;
 
@@ -76,6 +79,7 @@ function drag(e) {
     currentY = e.clientY;
 }
 
+// Finalizar el arrastre de los cables a los terminales
 function endDrag() {
     if (!draggedElement) return;
     
@@ -100,6 +104,7 @@ function endDrag() {
     currentWireType = null;
 }
 
+// Verificar si el cable fue soltado en un terminal
 function isOverlapping(el1, el2) {
     const rect1 = el1.getBoundingClientRect();
     const rect2 = el2.getBoundingClientRect();
@@ -112,6 +117,7 @@ function isOverlapping(el1, el2) {
     );
 }
 
+// Si el cable fue soltado en un terminal correcto -> VERDE el terminal , sino se restablecen las conexiones
 function handleConnection(terminalElement) {
     
     const terminalType = terminalElement.dataset.type;
@@ -130,12 +136,14 @@ function handleConnection(terminalElement) {
     }
 }
 
+// Restablecer posición de un solo cable (cuando no fue conectado a un terminal)
 function resetWirePosition() {
     draggedElement.style.position = 'relative'; 
     draggedElement.style.left = '0px'; 
     draggedElement.style.top = '0px';
 }
 
+// Restablecer posición de todos los cables cable (cuando uno fue mal conectado a un terminal)
 function resetAllWires() {
     document.querySelectorAll('.draggable').forEach(w => {
         w.style.display = 'block';
@@ -153,6 +161,7 @@ function resetAllWires() {
     }
 }
 
+// INICIO de la tarea
 function startOutletTask() {
     taskActive = true; 
 
@@ -198,6 +207,7 @@ function checkConnections() {
     endMission(true);
 }
 
+// FIN de la tarea
 export function endMission(success) {
     taskActive = false; 
     taskReady = false;

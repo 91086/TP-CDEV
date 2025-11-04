@@ -51,12 +51,12 @@ export async function loadAudios(listener) {
     // 4. Configuracion del audio de la alarma
     alarma.setBuffer(alarmaBuffer);
     alarma.setLoop(true);
-    alarma.setVolume(1); 
+    alarma.setVolume(0.08); 
 
     // 5. Configuracion del audio de las chispas del enchufe
     chispas.setBuffer(chispasBuffer);
     chispas.setLoop(false);
-    chispas.setVolume(0.07); 
+    chispas.setVolume(0.1); 
 
     // 6. Configuracion del audio de la toma de herramientas
     tomarObjeto.setBuffer(tomarObjetoBuffer);

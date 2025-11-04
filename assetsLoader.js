@@ -44,7 +44,7 @@ export async function loadAssets(escena) {
     console.log('Iniciando carga de modelos...');
 
     try {
-        // 1. Carga ambos modelos concurrentemente
+        // 1. Carga modelos concurrentemente
         const [salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf, tomacorrienteGltf] = await Promise.all([
             loadGltfModel('./assets/models/sala/scene.gltf'),
             loadGltfModel('./assets/models/caja_herramientas/scene.gltf'),

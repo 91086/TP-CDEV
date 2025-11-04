@@ -14,10 +14,10 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
-// Crear el panel de estadísticas
-const stats = new Stats();
-stats.showPanel(0); // 0: fps
-document.body.appendChild(stats.dom);
+// Crear el panel de estadísticas: OCULTO
+//const stats = new Stats();
+//stats.showPanel(0); // 0: fps
+//document.body.appendChild(stats.dom);
 
 // Escena
 const escena = new THREE.Scene();
@@ -51,7 +51,7 @@ renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
 renderer.setClearColor(0x000000);
 
 // Cámara en primera persona
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10);
 camera.position.set(0, 1.6, 3);
 
 // Integrar la cámara
@@ -274,7 +274,7 @@ function handleToggleLightRoom() {
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
 const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
-const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
+const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del jugador
 
 // Lista de cajas delimitadoras (Bounding Boxes)
 const wallColliders = [
@@ -322,6 +322,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// Eventos de teclado
 window.addEventListener('keyup', (e) => {
   const k = e.key.toLowerCase();
   if (k in keys) {
@@ -331,13 +332,13 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
-const speed = 2.5; //2.5 NORMAL
+const speed = 2.5;
 const clock = new THREE.Clock();
 
 function updateMovement(delta) {
     if (!isPointerLocked) return;
     
-    // 1. Calcular el vector de movimiento base
+    // Calcular el vector de movimiento base
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
     forward.y = 0;
@@ -627,10 +628,10 @@ function animate() {
     updateMovement(delta);
     checkInteraction(); 
 
-    // Llamado al panel de estadísticas de rendimiento
-    stats.begin();
+    // Llamado al panel de estadísticas de rendimiento: OCULTO
+    //stats.begin(); OCULTO 
     renderer.render(escena, camera);
-    stats.end();
+    //stats.end(); OCULTO 
 }
 
 setupTaskListeners();
