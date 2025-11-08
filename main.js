@@ -1,3 +1,4 @@
+import Stats from './libs/stats.module.js';
 import { loadAssets } from './assetsLoader.js';
 import { loadAudios } from './audiosLoader.js';
 import { startTimer, totalSeconds } from './timer.js';
@@ -6,39 +7,51 @@ import {
     attemptTaskStart, 
     setupTaskListeners,
     taskActive, 
-    endMission
+    endMission,
+    taskReady
 } from './taskManager.js';
+
+// Mensajes de instrucciones de juego sobre el canvas
+const instructionsMessage = document.getElementById('instructions-message');
+
+// OCULTO Crear el panel de estadísticas
+// const stats = new Stats();
+// stats.showPanel(0); // 0: fps
+// document.body.appendChild(stats.dom);
 
 // Escena
 const escena = new THREE.Scene();
 
 // Luz ambiental reducida
-const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.2);
+const ambientLightOFF = new THREE.AmbientLight(0xffffff, 0.12);
 escena.add(ambientLightOFF);
 
 // Luz ambiental encendida
 const ambientLightON = new THREE.AmbientLight(0xffffff, 1.5);
 
 // Luz puntual para emergencia
-const pointLight = new THREE.PointLight(0xFF0000, 5, 3);
+const pointLight = new THREE.PointLight(0xff0000, 5, 3);
 pointLight.position.set(2, 2.5, 3.8);
 escena.add(pointLight);
 
 // Luz puntual tipo "linterna" acoplada a la cámara
 const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
-flashlight.castShadow = true;
-flashlight.target.position.set(0, 0.5, -1); 
+flashlight.target.position.set(0, 0.5, -1);
+
+// Luz puntual para "efecto chispazo"
+const sparklight = new THREE.PointLight(0xffffff, 100, 1.5);
+sparklight.position.set(-0.46, 1.3, -4.4);
+sparklight.visible = false;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power', precision: 'lowp' });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
 renderer.setClearColor(0x000000);
-renderer.shadowMap.enabled = true;
 
 // Cámara en primera persona
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10);
 camera.position.set(0, 1.6, 3);
 
 // Integrar la cámara
@@ -54,43 +67,58 @@ escena.add(cameraHolder);
 const listener = new THREE.AudioListener();
 camera.add(listener);
 
+export let audioAlarma = null;
 let audioAperturaCaja = null;
 let audioCierreCaja = null;
 let audioLinterna = null;
-export let audioAlarma = null;
+let audioChispas = null;
+let audioTomarObjeto = null;
+export let audioError = null;
 
+// Carga de audios
 loadAudios(listener)
-    .then(({aperturaCaja, cierreCaja, linterna, alarma})=> {
+    .then(({aperturaCaja, cierreCaja, linterna, alarma, chispas, tomarObjeto, error})=> {
         audioAperturaCaja = aperturaCaja;
         audioCierreCaja = cierreCaja;
         audioLinterna = linterna;
         audioAlarma = alarma;
+        audioChispas = chispas;
+        audioTomarObjeto = tomarObjeto;
+        audioError = error;
     })
     .catch(err => {
         console.error('Error al cargar audios:', err);
 });
 
 // Teclas usadas para animaciones
-const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false};
+const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false, p:false };
 
 // Declarar mixer en scope global para actualizar en animate()
-let cajaMixer = null;
-let cajaAction = null;
 let cajaAbierta = false;
 let vKeyProcessed = false;
-let casco = null; 
 let mKeyProcessed = false;
 let cascoVisible = true;
 let hKeyProcessed = false;
 let luz = false;
+let cintaDestornilladorVisible = true;
+let cajaMixer = null;
+let cajaAction = null;
+let casco = null; 
+let cinta = null;
+let destornillador = null;
 
-loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
+// Carga de modelos
+loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf, destornilladorGltf, cintaGltf}) => {
     const clips = cajaGltf.animations || [];
+    cinta = cintaGltf.scene;
+    destornillador = destornilladorGltf.scene;
+    casco = cascoGltf.scene;
+
     if (clips.length > 0) {
         cajaMixer = new THREE.AnimationMixer(cajaHerramientas);
 
         let clip = THREE.AnimationClip.findByName(clips, 'Take 001') || clips[0];
-      
+
         if (clip) {
             // 1. Almacenar la acción en la variable global
             cajaAction = cajaMixer.clipAction(clip);
@@ -103,12 +131,8 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
             cajaAction.time = 0; 
             cajaAction.play();
             cajaAction.paused = true; 
-
-            casco = cascoGltf.scene;
             
             console.log('✓ Animación de caja configurada');
-        } else {
-            console.log('No se encontró clip "Take 001", clips disponibles:', clips.map(c => c.name));
         }
     } 
 
@@ -118,18 +142,25 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf}) => {
 
 // Animacion de la caja de herramientas
 function handleToggleCaja() {
-    // 1. Verificar si la tecla 'V' está presionada y si aún no se ha procesado
+    // Verificar si la tecla 'V' está presionada y si aún no se ha procesado
     if (keys.v) {
         if (!vKeyProcessed && cajaMixer && cajaAction) {
             vKeyProcessed = true; // Marca como procesada
+            updateGameInstructions('tomarHerramientas');
             if (!cajaAbierta) {
                 // ESTADO: Abrir
+                if(cintaDestornilladorVisible){
+                    escena.add(cinta);
+                    escena.add(destornillador);
+                }
                 cajaAction.time = 0.5;
                 cajaAction.paused = true;
                 cajaAbierta = true;
                 audioAperturaCaja.play();
             } else {
               // ESTADO: Cerrar
+                escena.remove(cinta);
+                escena.remove(destornillador);
                 cajaAction.time = -0.5;
                 cajaAction.paused = false;
                 cajaAbierta = false; 
@@ -141,6 +172,30 @@ function handleToggleCaja() {
     }
 }
 
+let pKeyProcessed = false;
+
+// Sacar cinta y destornillador de la caja de herramientas
+function checkToolAction() {
+    if (!cajaAbierta) {
+        pKeyProcessed = false;
+        return; 
+    }
+
+    // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
+    if (keys.p) {
+        if (!pKeyProcessed) {
+            updateGameInstructions('inicioTarea');
+            audioTomarObjeto.play();
+            cintaDestornilladorVisible = false;
+            escena.remove(cinta);
+            escena.remove(destornillador);
+            pKeyProcessed = true; 
+        }
+    } else {
+        pKeyProcessed = false;
+    }
+}
+
 // Animacion del casco con la linterna del casco
 function handleToggleCasco() {
     // 1. Verificar si la tecla 'M' está presionada y si aún no se ha procesado
@@ -148,10 +203,11 @@ function handleToggleCasco() {
         if (!mKeyProcessed) {
             mKeyProcessed = true;
             cascoVisible = !cascoVisible;
+            updateGameInstructions('detectarFalla');
             if (cascoVisible) {
                 // ESTADO: CASCO VISIBLE (Luz apagada)
                 if (casco) {
-                    casco.visible = true; 
+                    escena.add(casco);
                     audioLinterna.play();
                 }
                 camera.remove(flashlight);
@@ -159,7 +215,7 @@ function handleToggleCasco() {
             } else {
                 // ESTADO: CASCO OCULTO (Luz encendida)
                 if (casco) {
-                    casco.visible = false;
+                    escena.remove(casco);
                     audioLinterna.play();
                 }
                 camera.add(flashlight);
@@ -178,19 +234,38 @@ function handleToggleLightRoom() {
         if (!hKeyProcessed) {
             hKeyProcessed = true;
             luz = !luz;
+            updateGameInstructions('necesitaCasco');
             if (luz) {
-                // ESTADO: TERMICA BAJA (Enciendo la luz)
+                // ESTADO: TERMICA BAJA -> ALTA
                 escena.remove(ambientLightOFF);
                 escena.add(ambientLightON);
                 audioAlarma.setLoop(false);
-                
+                audioAlarma.stop();
+                // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
+                if (!taskReady) { 
+                    audioChispas.play();
+                    escena.add(sparklight);
+                    sparklight.visible = true;
+                    setTimeout(() => {
+                        escena.remove(ambientLightON);
+                        escena.add(ambientLightOFF);
+                        luz = false; 
+                        audioAlarma.setLoop(true);
+                        audioAlarma.play();
+                        audioChispas.stop();
+                    }, 500);
+                    setTimeout(() => {
+                        sparklight.visible = false;
+                    }, 600);
+                } else {
+                    updateGameInstructions('finJuego');
+                }
             } else {
-                // ESTADO: TERMICA ALTA (Apago la luz)
+                // ESTADO: TERMICA ALTA -> BAJA
                 escena.remove(ambientLightON);
                 escena.add(ambientLightOFF);
                 audioAlarma.setLoop(true);
                 audioAlarma.play();
-            
             }
         }
     } else {
@@ -201,7 +276,7 @@ function handleToggleLightRoom() {
 // Variables para Colisión
 const playerRadius = 0.5; // Radio aproximado del cilindro del jugador
 const playerBox = new THREE.Box3(); // Caja delimitadora para el jugador
-const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del "jugador"
+const playerSize = new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2); // Dimensiones del jugador
 
 // Lista de cajas delimitadoras (Bounding Boxes)
 const wallColliders = [
@@ -236,6 +311,7 @@ window.addEventListener('keydown', (e) => {
 
     // Presionar el Enter para iniciar la tarea y empezar a correr el temporizador
     if (e.key === 'Enter') {
+        updateGameInstructions('necesitaHerramientas');
         const started = attemptTaskStart(luz);
         if (started) {
             startTimer(); // Inicia el timer solo si la tarea fue aceptada
@@ -248,6 +324,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
+// Eventos de teclado
 window.addEventListener('keyup', (e) => {
   const k = e.key.toLowerCase();
   if (k in keys) {
@@ -257,13 +334,13 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Movimiento simple: mover el cameraHolder en el plano XZ manteniendo Y fija
-const speed = 2.5; //2.5 NORMAL
+const speed = 2.5;
 const clock = new THREE.Clock();
 
 function updateMovement(delta) {
     if (!isPointerLocked) return;
     
-    // 1. Calcular el vector de movimiento base
+    // Calcular el vector de movimiento base
     const forward = new THREE.Vector3();
     camera.getWorldDirection(forward);
     forward.y = 0;
@@ -347,7 +424,6 @@ canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
   if (canvas.requestPointerLock){
     canvas.requestPointerLock();
-    audioAlarma.play();
   }
 });
 
@@ -387,23 +463,38 @@ const interactionLabel = document.getElementById('interaction-label');
 const INTERACTABLES = {
     tablero: {
         pos: new THREE.Vector3(2, 0.5, 3.8),
-        message: "Presione H"
+        message: "Presione H\nSubir/Bajar Térmica"
     },
     caja: {
         pos: new THREE.Vector3(-1.9, 0.5, 4.3),
-        message: "Presione V"
+        message: "Presione V\nAbrir/Cerrar Caja"
+    },
+    cintaDestornillador: {
+        pos: new THREE.Vector3(-1.9, 0.5, 4.3),
+        message: "Presione P\nTomar Herramientas"
     },
     casco: {
         pos: new THREE.Vector3(2.05, -0.7, 2.7),
-        message: "Presione M"
+        message: "Presione M\nPoner/Quitar Casco"
     },
     tomacorriente: {
         pos: new THREE.Vector3(-0.46, 0.5, -3.5),
-        message: "Presione Enter ↵"
+        message: "Presione Enter\nIniciar Reparación"
     }
 };
 
+// Interaccion con los carteles flotantes
 function checkInteraction() {
+    const gameOverScreen = document.getElementById('game-over-screen');
+
+    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
+    if (gameOverScreen.style.visibility === 'visible'){
+        if (interactionLabel) {
+            interactionLabel.style.display = 'none';
+        }
+        return; 
+    }
+    
     // Ocultar los carteles flotantes si se inicio la tarea
     if (taskActive) {
         if (interactionLabel) {
@@ -420,6 +511,17 @@ function checkInteraction() {
     // Iterar y encontrar el objeto más cercano que esté dentro de INTERACTION_DISTANCE
     for (const key in INTERACTABLES) {
         const item = INTERACTABLES[key];
+
+        // Si la caja esta abierta y tiene las herramientas muestra PRESIONE 'P'
+        if ((key === 'caja' && cajaAbierta && cintaDestornilladorVisible)) {
+            continue; 
+        }
+
+        // Si la caja NO tiene la cinta y el destornillador muestra PRESIONE 'V'
+        if (key === 'cintaDestornillador' && !cintaDestornilladorVisible) {
+            continue; 
+        }
+
         const distance = cameraHolder.position.distanceTo(item.pos);
 
         if (distance < minDistance && distance < INTERACTION_DISTANCE) {
@@ -436,11 +538,81 @@ function checkInteraction() {
     }
 }
 
+// Si la instruccion ya fue mostrada no se volvera a mostrar nuevamente
+let flagIntructions = [false, false, false, false, false, false, false, false]; 
+
+// Mensajes de instrucciones de juego
+export function updateGameInstructions(messageKey) {
+    if (!instructionsMessage) return;
+
+    let messageText = "";
+
+    switch (messageKey) {
+        case 'inicioJuego': // Instruccion 0
+            if(!flagIntructions[0]){
+                messageText = "Intenta restablecer el circuito principal.";
+                flagIntructions[0] = true;
+            }
+            break;
+        case 'necesitaCasco': // Instruccion 1
+            if(!flagIntructions[1]){
+                messageText = "No puedes ver… Necesitas el equipo de seguridad.";
+                flagIntructions[1] = true;
+            }
+            break;
+        case 'detectarFalla': // Instruccion 2
+            if(!flagIntructions[2]){
+                messageText = "El chispazo no provino del panel. Busca el origen de la falla.";
+                flagIntructions[2] = true;
+            }
+            break;
+        case 'necesitaHerramientas': // Instruccion 3
+            if(!flagIntructions[3]){
+                messageText = "Busca las herramientas adecuadas.";
+                flagIntructions[3] = true;
+            }
+            break;
+        case 'tomarHerramientas': // Instruccion 4
+            if(!flagIntructions[4]){
+                messageText = "Un destornillador y una cinta aisladora parecen necesarios.";
+                flagIntructions[4] = true;
+            }
+            break;
+        case 'inicioTarea': // Instruccion 5
+            if(!flagIntructions[5]){
+                messageText = "Inicia la reparación del circuito.";
+                flagIntructions[5] = true;
+            }
+            break;
+        case 'tareaLista': // Instruccion 6
+            if(!flagIntructions[6]){
+                messageText = "Falla resuelta. Restablece el servicio.";
+                flagIntructions[6] = true;
+            }
+            break;
+        case 'finJuego': // Instruccion 7
+            if(!flagIntructions[7]){
+                messageText = "Circuito restablecido con éxito!";
+                flagIntructions[7] = true;
+            }
+            break;
+    }
+
+    instructionsMessage.textContent = messageText;
+
+    // Si no hay mensaje para mostrar se oculta el elemento
+    if (messageText === "") {
+         instructionsMessage.style.display = 'none';
+    } else {
+        instructionsMessage.style.display = 'block';
+    }
+}
+
 // Animación
 function animate() {
     requestAnimationFrame(animate); 
 
-    checkTaskReadiness(cajaAbierta, cascoVisible, luz);
+    checkTaskReadiness(cintaDestornilladorVisible, cascoVisible, luz);
 
     if (taskActive && totalSeconds <= 0) {
         endMission(false);
@@ -452,14 +624,16 @@ function animate() {
     }
     
     handleToggleCaja(); 
+    checkToolAction();
     handleToggleCasco();
     handleToggleLightRoom();
-
     updateMovement(delta);
-    
     checkInteraction(); 
 
+    // Llamado al panel de estadísticas de rendimiento: OCULTO
+    //OCULTO stats.begin();  
     renderer.render(escena, camera);
+    //OCULTO stats.end(); 
 }
 
 setupTaskListeners();

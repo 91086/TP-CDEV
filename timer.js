@@ -1,5 +1,5 @@
 let timerInterval = null;
-export let totalSeconds = 10;
+export let totalSeconds = 30;
 let timerRunning = false;
 
 const timerDisplay = document.querySelector('#game-timer');
@@ -29,6 +29,7 @@ export function startTimer() {
     
     timerRunning = true;
     
+    timerDisplay.style.display = 'block';
     timerDisplay.textContent = `${formatTime(totalSeconds)}`; 
     
     timerInterval = setInterval(() => {
@@ -44,7 +45,7 @@ export function startTimer() {
 export function restartTimer(){
     clearInterval(timerInterval);
     timerInterval = null;
-    totalSeconds = 10;
+    totalSeconds = 30;
     timerRunning = false;
     timerDisplay.textContent = `¡Misión cumplida!`; 
 }

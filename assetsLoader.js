@@ -44,7 +44,7 @@ export async function loadAssets(escena) {
     console.log('Iniciando carga de modelos...');
 
     try {
-        // 1. Carga ambos modelos concurrentemente
+        // 1. Carga modelos concurrentemente
         const [salaGltf, cajaGltf, tableroGltf, luzEmergenciaGltf, cascoGltf, destornilladorGltf, cintaGltf, tomacorrienteGltf] = await Promise.all([
             loadGltfModel('./assets/models/sala/scene.gltf'),
             loadGltfModel('./assets/models/caja_herramientas/scene.gltf'),
@@ -66,7 +66,7 @@ export async function loadAssets(escena) {
         const cajaHerramientas = cajaGltf.scene;
         cajaHerramientas.scale.set(0.002, 0.002, 0.002); 
         cajaHerramientas.position.set(-1.9, 0.5, 4.3);
-        cajaHerramientas.rotation.y = 210.5;
+        cajaHerramientas.rotation.y = 210.55;
 
         // 4. Configuración específica del tablero
         const tablero = tableroGltf.scene;
@@ -87,14 +87,15 @@ export async function loadAssets(escena) {
         // 7. Configuración específica del destornillador 
         const destornillador = destornilladorGltf.scene;
         destornillador.scale.set(1.4, 1.4, 1.4); 
-        destornillador.position.set(-1.9, 0.6, 4.5);
-        destornillador.rotation.y = 10
+        destornillador.position.set(-1.8, 0.56, 4.5);
+        destornillador.rotation.y = 10;
+        destornillador.rotation.z = 90;
 
         // 8. Configuración específica de la cinta 
         const cinta = cintaGltf.scene;
         cinta.scale.set(0.07, 0.07, 0.07); 
-        cinta.position.set(-2.1, 0.56, 4.5);
-        cinta.rotation.z = 175
+        cinta.position.set(-2.1, 0.56, 4.45);
+        cinta.rotation.z = 165;
 
         // 9. Configuración específica del tomacorriente 
         const tomacorriente = tomacorrienteGltf.scene;
@@ -107,14 +108,12 @@ export async function loadAssets(escena) {
         escena.add(tablero);
         escena.add(luzEmergencia);
         escena.add(casco);
-        escena.add(destornillador);
-        escena.add(cinta);
         escena.add(tomacorriente);
         
         console.log('✓ Carga de models finalizada');
 
         // Devolver referencias útiles
-        return { cajaGltf, cascoGltf, cajaHerramientas };
+        return { cajaGltf, cascoGltf, cajaHerramientas, destornilladorGltf, cintaGltf};
 
     } catch (error) {
         console.error('Error al cargar uno o más models.', error);
