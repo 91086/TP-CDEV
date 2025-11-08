@@ -1,5 +1,5 @@
 import { restartTimer } from './timer.js';
-import { updateGameInstructions } from './main.js';
+import { audioError, updateGameInstructions } from './main.js';
 
 const continueButton = document.getElementById('continue-button');
 const gameOverScreen = document.getElementById('game-over-screen');
@@ -131,6 +131,7 @@ function handleConnection(terminalElement) {
         draggedElement.style.display = 'none'; 
         checkConnections(); 
     } else {
+        audioError.play();
         currentConnections = []; 
         resetAllWires();
     }

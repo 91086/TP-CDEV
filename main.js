@@ -14,10 +14,10 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
-// Crear el panel de estadísticas: OCULTO
-//const stats = new Stats();
-//stats.showPanel(0); // 0: fps
-//document.body.appendChild(stats.dom);
+// OCULTO Crear el panel de estadísticas
+// const stats = new Stats();
+// stats.showPanel(0); // 0: fps
+// document.body.appendChild(stats.dom);
 
 // Escena
 const escena = new THREE.Scene();
@@ -39,9 +39,9 @@ const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
 flashlight.target.position.set(0, 0.5, -1);
 
 // Luz puntual para "efecto chispazo"
-const flashLight = new THREE.PointLight(0xffffff, 100, 1.5);
-flashLight.position.set(-0.46, 1.3, -4.4);
-flashLight.visible = false;
+const sparklight = new THREE.PointLight(0xffffff, 100, 1.5);
+sparklight.position.set(-0.46, 1.3, -4.4);
+sparklight.visible = false;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -73,16 +73,18 @@ let audioCierreCaja = null;
 let audioLinterna = null;
 let audioChispas = null;
 let audioTomarObjeto = null;
+export let audioError = null;
 
 // Carga de audios
 loadAudios(listener)
-    .then(({aperturaCaja, cierreCaja, linterna, alarma, chispas, tomarObjeto})=> {
+    .then(({aperturaCaja, cierreCaja, linterna, alarma, chispas, tomarObjeto, error})=> {
         audioAperturaCaja = aperturaCaja;
         audioCierreCaja = cierreCaja;
         audioLinterna = linterna;
         audioAlarma = alarma;
         audioChispas = chispas;
         audioTomarObjeto = tomarObjeto;
+        audioError = error;
     })
     .catch(err => {
         console.error('Error al cargar audios:', err);
@@ -242,8 +244,8 @@ function handleToggleLightRoom() {
                 // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
                 if (!taskReady) { 
                     audioChispas.play();
-                    escena.add(flashLight); //
-                    flashLight.visible = true; //
+                    escena.add(sparklight);
+                    sparklight.visible = true;
                     setTimeout(() => {
                         escena.remove(ambientLightON);
                         escena.add(ambientLightOFF);
@@ -253,7 +255,7 @@ function handleToggleLightRoom() {
                         audioChispas.stop();
                     }, 500);
                     setTimeout(() => {
-                        flashLight.visible = false;
+                        sparklight.visible = false;
                     }, 600);
                 } else {
                     updateGameInstructions('finJuego');
@@ -629,9 +631,9 @@ function animate() {
     checkInteraction(); 
 
     // Llamado al panel de estadísticas de rendimiento: OCULTO
-    //stats.begin(); OCULTO 
+    //OCULTO stats.begin();  
     renderer.render(escena, camera);
-    //stats.end(); OCULTO 
+    //OCULTO stats.end(); 
 }
 
 setupTaskListeners();
