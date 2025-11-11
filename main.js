@@ -41,11 +41,6 @@ escena.add(pointLight);
 const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
 flashlight.target.position.set(0, 0.5, -1);
 
-// Luz puntual para "efecto chispazo"
-const sparklight = new THREE.PointLight(0xffffff, 100, 1.5);
-sparklight.position.set(-0.46, 1.3, -4.4);
-sparklight.visible = false;
-
 // Canvas
 const canvas = document.querySelector('#miCanvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'low-power', precision: 'lowp' });
@@ -239,6 +234,9 @@ function handleToggleCasco() {
     }
 }
 
+let isSparkingContinuously = false;
+let flickerIntervalId = null;
+
 // Animacion de la luz de la sala
 function handleToggleLightRoom() {
     // 1. Verificar si la tecla 'H' está presionada y si aún no se ha procesado
@@ -256,22 +254,12 @@ function handleToggleLightRoom() {
                 escena.add(ambientLightON);
                 audioAlarma.setLoop(false);
                 audioAlarma.stop();
-                // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
-                if (!taskReady) { 
+                // Si la tarea NO esta lista se producen las chispas del tomacorriente
+                if (!taskReady) {
+                    isSparkingContinuously = true;
+                    audioChispas.setLoop(true); 
                     audioChispas.play();
-                    escena.add(sparklight);
-                    sparklight.visible = true;
-                    setTimeout(() => {
-                        escena.remove(ambientLightON);
-                        escena.add(ambientLightOFF);
-                        luz = false; 
-                        audioAlarma.setLoop(true);
-                        audioAlarma.play();
-                        audioChispas.stop();
-                    }, 500);
-                    setTimeout(() => {
-                        sparklight.visible = false;
-                    }, 600);
+                    startFlickerEffect();
                 } else {
                     updateGameInstructions('finJuego');
                 }
@@ -281,11 +269,47 @@ function handleToggleLightRoom() {
                 escena.add(ambientLightOFF);
                 audioAlarma.setLoop(true);
                 audioAlarma.play();
+                if (isSparkingContinuously) {
+                    isSparkingContinuously = false;
+                    audioChispas.stop();
+                    stopFlickerEffect();
+                }
             }
         }
     } else {
         hKeyProcessed = false;
     }
+}
+
+// Iniciar el parpadeo de la luz
+function startFlickerEffect() {
+    const FLICKER_RATE_MS = 300; 
+
+    // Limpiamos cualquier intervalo previo por seguridad
+    if (flickerIntervalId) {
+        clearInterval(flickerIntervalId);
+    }
+    
+    flickerIntervalId = setInterval(() => {
+        // Alternar la luz ambiental entre ON y OFF
+        if (escena.children.includes(ambientLightON)) {
+            escena.remove(ambientLightON);
+            escena.add(ambientLightOFF);
+        } else {
+            escena.remove(ambientLightOFF);
+            escena.add(ambientLightON);
+        }
+    }, FLICKER_RATE_MS);
+}
+
+// Detener el parpadeo de la luz
+function stopFlickerEffect() {
+    if (flickerIntervalId) {
+        clearInterval(flickerIntervalId);
+        flickerIntervalId = null;
+    }
+    escena.remove(ambientLightON);
+    escena.add(ambientLightOFF);
 }
 
 // Variables para Colisión
@@ -515,6 +539,7 @@ function checkInteraction() {
         if (interactionLabel) {
             interactionLabel.style.display = 'none';
         }
+        instructionsMessage.style.display = 'none';
         return; 
     }
     

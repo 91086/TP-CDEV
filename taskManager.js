@@ -273,7 +273,7 @@ function triggerElectrocutionEffect() {
             electricShockEffect.style.opacity = '0';
             // Una vez que la transición de opacidad termina, oculta completamente
             timerDisplay.style.display = 'block';
-            timerDisplay.textContent = "⚠️ PRECAUCIÓN: Tomacorriente bajo tensión!";
+            timerDisplay.textContent = "⚠️ RIESGO ELECTRICO: Tomacorriente bajo tensión!";
             electricShockEffect.addEventListener('transitionend', function handler() {
                 electricShockEffect.style.display = 'none';
                 electricShockEffect.removeEventListener('transitionend', handler);
