@@ -14,6 +14,9 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
+// Mensaje para hacer clic sobre la pantalla
+const timerDisplay = document.querySelector('#game-timer');
+
 // OCULTO Crear el panel de estadísticas
 // const stats = new Stats();
 // stats.showPanel(0); // 0: fps
@@ -419,7 +422,7 @@ const PI_2 = Math.PI / 2;
 const mouseSensitivity = 0.0025;
 let isPointerLocked = false;
 
-// Solicitar pointer lock al hacer click en el canvas
+// Solicitar pointer lock al hacer clic en el canvas
 canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
   if (canvas.requestPointerLock){
@@ -429,6 +432,10 @@ canvas.addEventListener('click', () => {
 
 document.addEventListener('pointerlockchange', () => {
     isPointerLocked = document.pointerLockElement === canvas;
+    // Oculto el cartel de "Haga clic en la pantalla para continuar"
+    if (flagIntructions[6]){
+        timerDisplay.style.display = 'none';
+    }
 });
 
 // Movimiento de mouse

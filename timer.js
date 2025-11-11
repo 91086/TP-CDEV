@@ -20,7 +20,7 @@ export function stopTimer() {
         clearInterval(timerInterval);
         timerInterval = null;
         timerRunning = false;
-        timerDisplay.textContent = `¡Tiempo Agotado!`; 
+        timerDisplay.textContent = "¡Tiempo Agotado!"; 
     }
 }
 
@@ -47,5 +47,4 @@ export function restartTimer(){
     timerInterval = null;
     totalSeconds = 30;
     timerRunning = false;
-    timerDisplay.textContent = `¡Misión cumplida!`; 
 }
