@@ -200,7 +200,7 @@ function checkConnections() {
     if (currentConnections.length < CORRECT_SEQUENCE.length) {
         if (taskMessage) {
             const required = CORRECT_SEQUENCE.length - currentConnections.length;
-            taskMessage.textContent = "¡Cable conectado! Faltan ${required} cable/s en el orden correcto...";
+            taskMessage.textContent = `¡Cable conectado! Faltan ${required} cable/s en el orden correcto...`;
         }
         return;
     }

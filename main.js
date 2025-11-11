@@ -95,13 +95,15 @@ loadAudios(listener)
 
 // Teclas usadas para animaciones
 const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false, p:false };
+let flagInteraccions = { tablero: false, caja: false, cintaDestornillador: false, casco: false };
 
 // Declarar mixer en scope global para actualizar en animate()
 let cajaAbierta = false;
 let vKeyProcessed = false;
 let mKeyProcessed = false;
-let cascoVisible = true;
+let pKeyProcessed = false;
 let hKeyProcessed = false;
+let cascoVisible = true;
 let luz = false;
 let cintaDestornilladorVisible = true;
 let cajaMixer = null;
@@ -147,6 +149,9 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf, destornillador
 function handleToggleCaja() {
     // Verificar si la tecla 'V' está presionada y si aún no se ha procesado
     if (keys.v) {
+        if (!flagInteraccions.caja) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!vKeyProcessed && cajaMixer && cajaAction) {
             vKeyProcessed = true; // Marca como procesada
             updateGameInstructions('tomarHerramientas');
@@ -175,8 +180,6 @@ function handleToggleCaja() {
     }
 }
 
-let pKeyProcessed = false;
-
 // Sacar cinta y destornillador de la caja de herramientas
 function checkToolAction() {
     if (!cajaAbierta) {
@@ -186,6 +189,9 @@ function checkToolAction() {
 
     // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
     if (keys.p) {
+        if (!flagInteraccions.cintaDestornillador) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!pKeyProcessed) {
             updateGameInstructions('inicioTarea');
             audioTomarObjeto.play();
@@ -203,6 +209,9 @@ function checkToolAction() {
 function handleToggleCasco() {
     // 1. Verificar si la tecla 'M' está presionada y si aún no se ha procesado
     if (keys.m) {
+        if (!flagInteraccions.casco) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!mKeyProcessed) {
             mKeyProcessed = true;
             cascoVisible = !cascoVisible;
@@ -234,6 +243,9 @@ function handleToggleCasco() {
 function handleToggleLightRoom() {
     // 1. Verificar si la tecla 'H' está presionada y si aún no se ha procesado
     if (keys.h) {
+        if (!flagInteraccions.tablero) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!hKeyProcessed) {
             hKeyProcessed = true;
             luz = !luz;
@@ -317,7 +329,7 @@ window.addEventListener('keydown', (e) => {
         updateGameInstructions('necesitaHerramientas');
         const started = attemptTaskStart(luz);
         if (started) {
-            startTimer(); // Inicia el timer solo si la tarea fue aceptada
+            startTimer(); // Inicia el timer solo si la tarea fue aceptada (cumple las condiciones)
         }
     }
 
@@ -494,6 +506,10 @@ const INTERACTABLES = {
 function checkInteraction() {
     const gameOverScreen = document.getElementById('game-over-screen');
 
+    for (const key in flagInteraccions) {
+        flagInteraccions[key] = false;
+    }
+
     // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
     if (gameOverScreen.style.visibility === 'visible'){
         if (interactionLabel) {
@@ -534,6 +550,19 @@ function checkInteraction() {
         if (distance < minDistance && distance < INTERACTION_DISTANCE) {
             minDistance = distance;
             nearestInteractable = item;
+            // Interaccion con los objetos
+            if (key === 'tablero') {
+                flagInteraccions.tablero = true;
+            }
+            if (key === 'caja') {
+                flagInteraccions.caja = true;
+            } 
+            if (key === 'cintaDestornillador') {
+                flagInteraccions.cintaDestornillador = true;
+            }  
+            if (key === 'casco') {
+                flagInteraccions.casco = true;
+            }
         }
     }
 
