@@ -14,6 +14,10 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
+// Pantallas de fin de juego
+const successScreen = document.getElementById('success-screen');
+const restartSuccessBtn = document.getElementById('restart-success-btn');
+
 // Mensaje para hacer clic sobre la pantalla
 const timerDisplay = document.querySelector('#game-timer');
 
@@ -47,6 +51,8 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
 renderer.setClearColor(0x000000);
+
+const textureLoader = new THREE.TextureLoader(); // <-- AÑADIR ESTO
 
 // Cámara en primera persona
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10);
@@ -236,6 +242,7 @@ function handleToggleCasco() {
 
 let isSparkingContinuously = false;
 let flickerIntervalId = null;
+let sparkSprite = null; // Reemplaza flickerSpotlight
 
 // Animacion de la luz de la sala
 function handleToggleLightRoom() {
@@ -262,6 +269,16 @@ function handleToggleLightRoom() {
                     startFlickerEffect();
                 } else {
                     updateGameInstructions('finJuego');
+                    // Inicia la secuencia de fin de juego exitoso
+                    setTimeout(() => {
+                        if (successScreen) {
+                            document.exitPointerLock(); // Libera el cursor para poder hacer click
+                            canvas.style.display = 'none';
+                            instructionsMessage.style.display = 'none';
+                            interactionLabel.style.display = 'none';
+                            successScreen.style.display = 'flex';
+                        }
+                    }, 3000); // Espera 3 segundos
                 }
             } else {
                 // ESTADO: TERMICA ALTA -> BAJA
@@ -283,21 +300,46 @@ function handleToggleLightRoom() {
 
 // Iniciar el parpadeo de la luz
 function startFlickerEffect() {
-    const FLICKER_RATE_MS = 300; 
+    const FLICKER_RATE_MS = 150;
 
-    // Limpiamos cualquier intervalo previo por seguridad
     if (flickerIntervalId) {
         clearInterval(flickerIntervalId);
     }
-    
+
+    // Crear el sprite de chispas si no existe
+    if (!sparkSprite) {
+        const sparkTexture = textureLoader.load('assets/images/spark_effect.png'); // Asegúrate que la ruta es correcta
+        const sparkMaterial = new THREE.MeshBasicMaterial({
+            map: sparkTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending, // Efecto de brillo
+            depthWrite: false // Evita problemas de renderizado con otros objetos transparentes
+        });
+        const sparkGeometry = new THREE.PlaneGeometry(0.5, 0.5); // Tamaño del sprite
+        sparkSprite = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        sparkSprite.position.set(-0.46, 1.3, -4.3); // Posición justo delante del enchufe
+        sparkSprite.visible = false; // Inicia oculto
+        escena.add(sparkSprite);
+    }
+
     flickerIntervalId = setInterval(() => {
-        // Alternar la luz ambiental entre ON y OFF
+        // Parpadeo sincronizado de luz ambiental y sprite
         if (escena.children.includes(ambientLightON)) {
             escena.remove(ambientLightON);
             escena.add(ambientLightOFF);
+            if (sparkSprite) {
+                sparkSprite.visible = false;
+            }
         } else {
             escena.remove(ambientLightOFF);
             escena.add(ambientLightON);
+            if (sparkSprite) {
+                sparkSprite.visible = true;
+                // Rotación y escala aleatoria para un efecto más dinámico
+                sparkSprite.rotation.z = Math.random() * Math.PI * 2;
+                const scale = 0.8 + Math.random() * 0.4;
+                sparkSprite.scale.set(scale, scale, scale);
+            }
         }
     }, FLICKER_RATE_MS);
 }
@@ -308,6 +350,15 @@ function stopFlickerEffect() {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
+    // Limpiar el sprite
+    if (sparkSprite) {
+        escena.remove(sparkSprite);
+        // Opcional: liberar memoria
+        sparkSprite.geometry.dispose();
+        sparkSprite.material.dispose();
+        sparkSprite = null;
+    }
+    // Restablecer la luz ambiental
     escena.remove(ambientLightON);
     escena.add(ambientLightOFF);
 }
@@ -343,6 +394,13 @@ function updatePlayerBox(position) {
 
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
+
+// Listener para el botón de reinicio en la pantalla de éxito
+if (restartSuccessBtn) {
+    restartSuccessBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 
 // Eventos de teclado
 window.addEventListener('keydown', (e) => {
@@ -529,13 +587,10 @@ const INTERACTABLES = {
 // Interaccion con los carteles flotantes
 function checkInteraction() {
     const gameOverScreen = document.getElementById('game-over-screen');
+    const successScreen = document.getElementById('success-screen');
 
-    for (const key in flagInteraccions) {
-        flagInteraccions[key] = false;
-    }
-
-    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
-    if (gameOverScreen.style.visibility === 'visible'){
+    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver o Éxito
+    if ((gameOverScreen && gameOverScreen.style.visibility === 'visible') || (successScreen && successScreen.style.display === 'flex')){
         if (interactionLabel) {
             interactionLabel.style.display = 'none';
         }
@@ -543,6 +598,10 @@ function checkInteraction() {
         return; 
     }
     
+    for (const key in flagInteraccions) {
+        flagInteraccions[key] = false;
+    }
+
     // Ocultar los carteles flotantes si se inicio la tarea
     if (taskActive) {
         if (interactionLabel) {
@@ -559,6 +618,11 @@ function checkInteraction() {
     // Iterar y encontrar el objeto más cercano que esté dentro de INTERACTION_DISTANCE
     for (const key in INTERACTABLES) {
         const item = INTERACTABLES[key];
+
+        // Si la tarea ya está completada, no mostrar el cartel del tomacorriente
+        if (key === 'tomacorriente' && taskReady) {
+            continue;
+        }
 
         // Si la caja esta abierta y tiene las herramientas muestra PRESIONE 'P'
         if ((key === 'caja' && cajaAbierta && cintaDestornilladorVisible)) {
@@ -617,7 +681,7 @@ export function updateGameInstructions(messageKey) {
             break;
         case 'necesitaCasco': // Instruccion 1
             if(!flagIntructions[1]){
-                messageText = "No puedes ver… Necesitas el equipo de seguridad.";
+                messageText = "Estás a oscuras. Debes encontrar el casco de seguridad con linterna.";
                 flagIntructions[1] = true;
             }
             break;

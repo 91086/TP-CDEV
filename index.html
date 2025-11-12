@@ -19,7 +19,8 @@
 
     <div id="start-screen" class="start-screen">
         <h1 class="game-title">FASE CERO</h1>
-        <button id="start-btn" disabled>START</button> 
+        <p class="start-instructions">Desplázate con [W] [A] [S] [D] y orienta tu vista con el mouse.</p>
+        <button id="start-btn">START</button>
     </div>
 
     <div class="task-grid" style="display: none;">
@@ -41,6 +42,12 @@
 
     <div id="game-over-screen" class="start-screen" style="display: none;">
         <h1 class="game-title">GAME OVER</h1>
+        <button id="retry-btn">RESTART</button>
+    </div>
+
+    <div id="success-screen" class="start-screen" style="display: none;">
+        <h1 class="success-title">FASE CERO</h1>
+        <p class="success-subtitle">Completada con éxito. Continuará...</p>
         <button id="retry-btn">RESTART</button>
     </div>
 
