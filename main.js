@@ -681,7 +681,7 @@ export function updateGameInstructions(messageKey) {
             break;
         case 'necesitaCasco': // Instruccion 1
             if(!flagIntructions[1]){
-                messageText = "No puedes ver… Necesitas el equipo de seguridad.";
+                messageText = "Estás a oscuras. Debes encontrar el casco de seguridad con linterna.";
                 flagIntructions[1] = true;
             }
             break;

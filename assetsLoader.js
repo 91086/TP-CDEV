@@ -81,8 +81,8 @@ export async function loadAssets(escena) {
 
         // 6. Configuración específica del casco 
         const casco = cascoGltf.scene;
-        casco.position.set(2.05, -0.7, 2.7);
-        casco.rotation.y = 103.6;
+        casco.position.set(2.1, -0.7, 2.65);
+        casco.rotation.y = 4.7;
 
         // 7. Configuración específica del destornillador 
         const destornillador = destornilladorGltf.scene;

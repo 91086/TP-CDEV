@@ -61,41 +61,58 @@ body {
     transform: scale(1.05);
 }
 
-/* --- ESTILOS PANTALLA DE ÉXITO --- */
+.start-instructions {
+    position: absolute; 
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    pointer-events: none;
+    z-index: 9999;
+    letter-spacing: 1px;
+    
+    text-align: center;
+    white-space: nowrap;
+}
+
 .success-title {
     font-size: 5rem;
     letter-spacing: 2px;
-    margin-bottom: 20px;
+    margin-bottom: 50px;
     text-transform: uppercase;
-    color: #2a9d8f; /* Verde solicitado */
+    color: #2a9d8f;
     text-shadow: 0 0 10px #2a9d8f, 0 0 30px #2a9d8f;
 }
 
 .success-subtitle {
-    font-size: 1.2rem;
-    color: #f1faee;
-    margin-bottom: 50px;
-    letter-spacing: 1px;
-}
-
-#restart-success-btn {
-    font-size: 1.5rem;
-    padding: 15px 40px;
-    border: none;
+    position: absolute; 
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 10px 18px;
     border-radius: 8px;
-    background-color: #1d3557;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px #1d3557;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    pointer-events: none;
+    z-index: 9999;
+    letter-spacing: 1px;
+    
+    text-align: center;
+    white-space: nowrap;
 }
-
-#restart-success-btn:hover {
-    background-color: #457b9d;
-    box-shadow: 0 0 20px #457b9d;
-    transform: scale(1.05);
-}
-/* --- FIN ESTILOS --- */
 
 #retry-btn {
     font-size: 1.5rem;
