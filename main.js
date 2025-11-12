@@ -48,6 +48,8 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio ? window.devicePixelRatio : 1);
 renderer.setClearColor(0x000000);
 
+const textureLoader = new THREE.TextureLoader(); // <-- AÑADIR ESTO
+
 // Cámara en primera persona
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10);
 camera.position.set(0, 1.6, 3);
@@ -236,7 +238,7 @@ function handleToggleCasco() {
 
 let isSparkingContinuously = false;
 let flickerIntervalId = null;
-let flickerSpotlight = null; // Luz focal para el enchufe
+let sparkSprite = null; // Reemplaza flickerSpotlight
 
 // Animacion de la luz de la sala
 function handleToggleLightRoom() {
@@ -284,42 +286,45 @@ function handleToggleLightRoom() {
 
 // Iniciar el parpadeo de la luz
 function startFlickerEffect() {
-    const FLICKER_RATE_MS = 200;
+    const FLICKER_RATE_MS = 150;
 
     if (flickerIntervalId) {
         clearInterval(flickerIntervalId);
     }
 
-    // Crear la luz focal si no existe
-     if (!flickerSpotlight) {
-        flickerSpotlight = new THREE.SpotLight(0xffa500, 0, 5, Math.PI / 28, 1);
-        flickerSpotlight.position.set(-0.46, 1.5, -3.0); // Posición arriba del enchufe
-        flickerSpotlight.target.position.set(-0.46, 1.5, -4.4); // Apunta al enchufe
-        escena.add(flickerSpotlight);
-        escena.add(flickerSpotlight.target);
+    // Crear el sprite de chispas si no existe
+    if (!sparkSprite) {
+        const sparkTexture = textureLoader.load('assets/images/spark_effect.png'); // Asegúrate que la ruta es correcta
+        const sparkMaterial = new THREE.MeshBasicMaterial({
+            map: sparkTexture,
+            transparent: true,
+            blending: THREE.AdditiveBlending, // Efecto de brillo
+            depthWrite: false // Evita problemas de renderizado con otros objetos transparentes
+        });
+        const sparkGeometry = new THREE.PlaneGeometry(0.5, 0.5); // Tamaño del sprite
+        sparkSprite = new THREE.Mesh(sparkGeometry, sparkMaterial);
+        sparkSprite.position.set(-0.46, 1.3, -4.3); // Posición justo delante del enchufe
+        sparkSprite.visible = false; // Inicia oculto
+        escena.add(sparkSprite);
     }
 
     flickerIntervalId = setInterval(() => {
-        // Parpadeo sincronizado de luz ambiental y focal
+        // Parpadeo sincronizado de luz ambiental y sprite
         if (escena.children.includes(ambientLightON)) {
-            // Si la luz ambiental está encendida, la apagamos
             escena.remove(ambientLightON);
             escena.add(ambientLightOFF);
-            
-            // Y también apagamos la luz focal
-            if (flickerSpotlight) {
-                flickerSpotlight.intensity = 0;
+            if (sparkSprite) {
+                sparkSprite.visible = false;
             }
         } else {
-            // Si la luz ambiental está apagada, la encendemos
             escena.remove(ambientLightOFF);
             escena.add(ambientLightON);
-
-            // Y también encendemos la luz focal con efectos
-            if (flickerSpotlight) {
-                flickerSpotlight.intensity = 15; // Intensidad al encender
-                // Color aleatorio entre naranja y celeste
-                flickerSpotlight.color.setHex(Math.random() > 0.5 ? 0xffa500 : 0x00aaff);
+            if (sparkSprite) {
+                sparkSprite.visible = true;
+                // Rotación y escala aleatoria para un efecto más dinámico
+                sparkSprite.rotation.z = Math.random() * Math.PI * 2;
+                const scale = 0.8 + Math.random() * 0.4;
+                sparkSprite.scale.set(scale, scale, scale);
             }
         }
     }, FLICKER_RATE_MS);
@@ -331,13 +336,15 @@ function stopFlickerEffect() {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
-    // Limpiar la luz focal
-    if (flickerSpotlight) {
-        escena.remove(flickerSpotlight);
-        escena.remove(flickerSpotlight.target);
-        flickerSpotlight = null;
+    // Limpiar el sprite
+    if (sparkSprite) {
+        escena.remove(sparkSprite);
+        // Opcional: liberar memoria
+        sparkSprite.geometry.dispose();
+        sparkSprite.material.dispose();
+        sparkSprite = null;
     }
-    // Restablecer la luz ambiental a su estado apagado por defecto
+    // Restablecer la luz ambiental
     escena.remove(ambientLightON);
     escena.add(ambientLightOFF);
 }
