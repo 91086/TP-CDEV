@@ -14,6 +14,9 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
+// Mensaje para hacer clic sobre la pantalla
+const timerDisplay = document.querySelector('#game-timer');
+
 // OCULTO Crear el panel de estadísticas
 // const stats = new Stats();
 // stats.showPanel(0); // 0: fps
@@ -37,11 +40,6 @@ escena.add(pointLight);
 // Luz puntual tipo "linterna" acoplada a la cámara
 const flashlight = new THREE.SpotLight(0xffffff, 10, 5, Math.PI / 6, 0.3, 2);
 flashlight.target.position.set(0, 0.5, -1);
-
-// Luz puntual para "efecto chispazo"
-const sparklight = new THREE.PointLight(0xffffff, 100, 1.5);
-sparklight.position.set(-0.46, 1.3, -4.4);
-sparklight.visible = false;
 
 // Canvas
 const canvas = document.querySelector('#miCanvas');
@@ -92,13 +90,15 @@ loadAudios(listener)
 
 // Teclas usadas para animaciones
 const keys = { w: false, a: false, s: false, d: false , v:false, m:false, h:false, p:false };
+let flagInteraccions = { tablero: false, caja: false, cintaDestornillador: false, casco: false };
 
 // Declarar mixer en scope global para actualizar en animate()
 let cajaAbierta = false;
 let vKeyProcessed = false;
 let mKeyProcessed = false;
-let cascoVisible = true;
+let pKeyProcessed = false;
 let hKeyProcessed = false;
+let cascoVisible = true;
 let luz = false;
 let cintaDestornilladorVisible = true;
 let cajaMixer = null;
@@ -144,6 +144,9 @@ loadAssets(escena).then(({ cajaGltf, cajaHerramientas, cascoGltf, destornillador
 function handleToggleCaja() {
     // Verificar si la tecla 'V' está presionada y si aún no se ha procesado
     if (keys.v) {
+        if (!flagInteraccions.caja) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!vKeyProcessed && cajaMixer && cajaAction) {
             vKeyProcessed = true; // Marca como procesada
             updateGameInstructions('tomarHerramientas');
@@ -172,8 +175,6 @@ function handleToggleCaja() {
     }
 }
 
-let pKeyProcessed = false;
-
 // Sacar cinta y destornillador de la caja de herramientas
 function checkToolAction() {
     if (!cajaAbierta) {
@@ -183,6 +184,9 @@ function checkToolAction() {
 
     // Verificar si la tecla 'P' está presionada y si aún no se ha procesado.
     if (keys.p) {
+        if (!flagInteraccions.cintaDestornillador) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!pKeyProcessed) {
             updateGameInstructions('inicioTarea');
             audioTomarObjeto.play();
@@ -200,6 +204,9 @@ function checkToolAction() {
 function handleToggleCasco() {
     // 1. Verificar si la tecla 'M' está presionada y si aún no se ha procesado
     if (keys.m) {
+        if (!flagInteraccions.casco) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!mKeyProcessed) {
             mKeyProcessed = true;
             cascoVisible = !cascoVisible;
@@ -227,10 +234,16 @@ function handleToggleCasco() {
     }
 }
 
+let isSparkingContinuously = false;
+let flickerIntervalId = null;
+
 // Animacion de la luz de la sala
 function handleToggleLightRoom() {
     // 1. Verificar si la tecla 'H' está presionada y si aún no se ha procesado
     if (keys.h) {
+        if (!flagInteraccions.tablero) { 
+            return; // No se puede interactuar, está demasiado lejos
+        }
         if (!hKeyProcessed) {
             hKeyProcessed = true;
             luz = !luz;
@@ -241,22 +254,12 @@ function handleToggleLightRoom() {
                 escena.add(ambientLightON);
                 audioAlarma.setLoop(false);
                 audioAlarma.stop();
-                // Si la tarea NO esta hay chispas y no se puede prender la luz de la sala
-                if (!taskReady) { 
+                // Si la tarea NO esta lista se producen las chispas del tomacorriente
+                if (!taskReady) {
+                    isSparkingContinuously = true;
+                    audioChispas.setLoop(true); 
                     audioChispas.play();
-                    escena.add(sparklight);
-                    sparklight.visible = true;
-                    setTimeout(() => {
-                        escena.remove(ambientLightON);
-                        escena.add(ambientLightOFF);
-                        luz = false; 
-                        audioAlarma.setLoop(true);
-                        audioAlarma.play();
-                        audioChispas.stop();
-                    }, 500);
-                    setTimeout(() => {
-                        sparklight.visible = false;
-                    }, 600);
+                    startFlickerEffect();
                 } else {
                     updateGameInstructions('finJuego');
                 }
@@ -266,11 +269,47 @@ function handleToggleLightRoom() {
                 escena.add(ambientLightOFF);
                 audioAlarma.setLoop(true);
                 audioAlarma.play();
+                if (isSparkingContinuously) {
+                    isSparkingContinuously = false;
+                    audioChispas.stop();
+                    stopFlickerEffect();
+                }
             }
         }
     } else {
         hKeyProcessed = false;
     }
+}
+
+// Iniciar el parpadeo de la luz
+function startFlickerEffect() {
+    const FLICKER_RATE_MS = 300; 
+
+    // Limpiamos cualquier intervalo previo por seguridad
+    if (flickerIntervalId) {
+        clearInterval(flickerIntervalId);
+    }
+    
+    flickerIntervalId = setInterval(() => {
+        // Alternar la luz ambiental entre ON y OFF
+        if (escena.children.includes(ambientLightON)) {
+            escena.remove(ambientLightON);
+            escena.add(ambientLightOFF);
+        } else {
+            escena.remove(ambientLightOFF);
+            escena.add(ambientLightON);
+        }
+    }, FLICKER_RATE_MS);
+}
+
+// Detener el parpadeo de la luz
+function stopFlickerEffect() {
+    if (flickerIntervalId) {
+        clearInterval(flickerIntervalId);
+        flickerIntervalId = null;
+    }
+    escena.remove(ambientLightON);
+    escena.add(ambientLightOFF);
 }
 
 // Variables para Colisión
@@ -314,7 +353,7 @@ window.addEventListener('keydown', (e) => {
         updateGameInstructions('necesitaHerramientas');
         const started = attemptTaskStart(luz);
         if (started) {
-            startTimer(); // Inicia el timer solo si la tarea fue aceptada
+            startTimer(); // Inicia el timer solo si la tarea fue aceptada (cumple las condiciones)
         }
     }
 
@@ -419,7 +458,7 @@ const PI_2 = Math.PI / 2;
 const mouseSensitivity = 0.0025;
 let isPointerLocked = false;
 
-// Solicitar pointer lock al hacer click en el canvas
+// Solicitar pointer lock al hacer clic en el canvas
 canvas.addEventListener('click', () => {
   canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock;
   if (canvas.requestPointerLock){
@@ -429,6 +468,10 @@ canvas.addEventListener('click', () => {
 
 document.addEventListener('pointerlockchange', () => {
     isPointerLocked = document.pointerLockElement === canvas;
+    // Oculto el cartel de "Haga clic en la pantalla para continuar"
+    if (flagIntructions[6]){
+        timerDisplay.style.display = 'none';
+    }
 });
 
 // Movimiento de mouse
@@ -487,11 +530,16 @@ const INTERACTABLES = {
 function checkInteraction() {
     const gameOverScreen = document.getElementById('game-over-screen');
 
+    for (const key in flagInteraccions) {
+        flagInteraccions[key] = false;
+    }
+
     // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
     if (gameOverScreen.style.visibility === 'visible'){
         if (interactionLabel) {
             interactionLabel.style.display = 'none';
         }
+        instructionsMessage.style.display = 'none';
         return; 
     }
     
@@ -527,6 +575,19 @@ function checkInteraction() {
         if (distance < minDistance && distance < INTERACTION_DISTANCE) {
             minDistance = distance;
             nearestInteractable = item;
+            // Interaccion con los objetos
+            if (key === 'tablero') {
+                flagInteraccions.tablero = true;
+            }
+            if (key === 'caja') {
+                flagInteraccions.caja = true;
+            } 
+            if (key === 'cintaDestornillador') {
+                flagInteraccions.cintaDestornillador = true;
+            }  
+            if (key === 'casco') {
+                flagInteraccions.casco = true;
+            }
         }
     }
 

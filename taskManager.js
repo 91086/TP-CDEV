@@ -1,13 +1,13 @@
 import { restartTimer } from './timer.js';
 import { audioError, updateGameInstructions } from './main.js';
 
-const continueButton = document.getElementById('continue-button');
 const gameOverScreen = document.getElementById('game-over-screen');
 const retryButton = document.getElementById('retry-btn');
 const electricShockEffect = document.getElementById('electric-shock-effect');
 const taskMessage = document.getElementById('task-message');
 const miCanvas = document.getElementById('miCanvas');
 const taskGrid = document.querySelector('.task-grid');
+const timerDisplay = document.querySelector('#game-timer');
 
 export let isReadyForTask = false;
 export let taskActive = false;
@@ -227,12 +227,8 @@ export function endMission(success) {
         taskReady = true;
         restartTimer();
         if (taskMessage) {
-            taskMessage.textContent = "¡Misión Cumplida!";
+            timerDisplay.textContent = "Haga clic en la pantalla para continuar"; 
             updateGameInstructions('tareaLista');
-        }
-        if (continueButton) {
-            continueButton.style.display = 'block';
-            document.body.requestPointerLock(); 
         }
     } else {
         showGameOverScreen();
@@ -276,12 +272,15 @@ function triggerElectrocutionEffect() {
         setTimeout(() => {
             electricShockEffect.style.opacity = '0';
             // Una vez que la transición de opacidad termina, oculta completamente
+            timerDisplay.style.display = 'block';
+            timerDisplay.textContent = "⚠️ RIESGO ELECTRICO: Tomacorriente bajo tensión!";
             electricShockEffect.addEventListener('transitionend', function handler() {
                 electricShockEffect.style.display = 'none';
                 electricShockEffect.removeEventListener('transitionend', handler);
             });
-        }, 300); // Muestra el efecto por 0.3 segundos
+        }, 300);
     }
+    showGameOverScreen();
 }
 
 // Mostrar pantalla de GameOver
@@ -294,6 +293,10 @@ function showGameOverScreen() {
     if (gameOverScreen) {
         gameOverScreen.style.display = 'flex';
         gameOverScreen.style.visibility = 'visible';
+    }
+
+    if (document.pointerLockElement) {
+        document.exitPointerLock();
     }
 
     if (retryButton) {
