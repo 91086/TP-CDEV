@@ -236,6 +236,7 @@ function handleToggleCasco() {
 
 let isSparkingContinuously = false;
 let flickerIntervalId = null;
+let flickerSpotlight = null; // Luz focal para el enchufe
 
 // Animacion de la luz de la sala
 function handleToggleLightRoom() {
@@ -283,21 +284,43 @@ function handleToggleLightRoom() {
 
 // Iniciar el parpadeo de la luz
 function startFlickerEffect() {
-    const FLICKER_RATE_MS = 300; 
+    const FLICKER_RATE_MS = 200;
 
-    // Limpiamos cualquier intervalo previo por seguridad
     if (flickerIntervalId) {
         clearInterval(flickerIntervalId);
     }
-    
+
+    // Crear la luz focal si no existe
+     if (!flickerSpotlight) {
+        flickerSpotlight = new THREE.SpotLight(0xffa500, 0, 5, Math.PI / 28, 1);
+        flickerSpotlight.position.set(-0.46, 1.5, -3.0); // Posición arriba del enchufe
+        flickerSpotlight.target.position.set(-0.46, 1.5, -4.4); // Apunta al enchufe
+        escena.add(flickerSpotlight);
+        escena.add(flickerSpotlight.target);
+    }
+
     flickerIntervalId = setInterval(() => {
-        // Alternar la luz ambiental entre ON y OFF
+        // Parpadeo sincronizado de luz ambiental y focal
         if (escena.children.includes(ambientLightON)) {
+            // Si la luz ambiental está encendida, la apagamos
             escena.remove(ambientLightON);
             escena.add(ambientLightOFF);
+            
+            // Y también apagamos la luz focal
+            if (flickerSpotlight) {
+                flickerSpotlight.intensity = 0;
+            }
         } else {
+            // Si la luz ambiental está apagada, la encendemos
             escena.remove(ambientLightOFF);
             escena.add(ambientLightON);
+
+            // Y también encendemos la luz focal con efectos
+            if (flickerSpotlight) {
+                flickerSpotlight.intensity = 15; // Intensidad al encender
+                // Color aleatorio entre naranja y celeste
+                flickerSpotlight.color.setHex(Math.random() > 0.5 ? 0xffa500 : 0x00aaff);
+            }
         }
     }, FLICKER_RATE_MS);
 }
@@ -308,6 +331,13 @@ function stopFlickerEffect() {
         clearInterval(flickerIntervalId);
         flickerIntervalId = null;
     }
+    // Limpiar la luz focal
+    if (flickerSpotlight) {
+        escena.remove(flickerSpotlight);
+        escena.remove(flickerSpotlight.target);
+        flickerSpotlight = null;
+    }
+    // Restablecer la luz ambiental a su estado apagado por defecto
     escena.remove(ambientLightON);
     escena.add(ambientLightOFF);
 }
