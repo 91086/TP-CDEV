@@ -619,6 +619,11 @@ function checkInteraction() {
     for (const key in INTERACTABLES) {
         const item = INTERACTABLES[key];
 
+        // Si la tarea ya está completada, no mostrar el cartel del tomacorriente
+        if (key === 'tomacorriente' && taskReady) {
+            continue;
+        }
+
         // Si la caja esta abierta y tiene las herramientas muestra PRESIONE 'P'
         if ((key === 'caja' && cajaAbierta && cintaDestornilladorVisible)) {
             continue; 
