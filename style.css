@@ -61,6 +61,42 @@ body {
     transform: scale(1.05);
 }
 
+/* --- ESTILOS PANTALLA DE ÉXITO --- */
+.success-title {
+    font-size: 5rem;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    color: #2a9d8f; /* Verde solicitado */
+    text-shadow: 0 0 10px #2a9d8f, 0 0 30px #2a9d8f;
+}
+
+.success-subtitle {
+    font-size: 1.2rem;
+    color: #f1faee;
+    margin-bottom: 50px;
+    letter-spacing: 1px;
+}
+
+#restart-success-btn {
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    background-color: #1d3557;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #1d3557;
+}
+
+#restart-success-btn:hover {
+    background-color: #457b9d;
+    box-shadow: 0 0 20px #457b9d;
+    transform: scale(1.05);
+}
+/* --- FIN ESTILOS --- */
+
 #retry-btn {
     font-size: 1.5rem;
     padding: 15px 40px;

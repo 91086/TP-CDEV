@@ -14,6 +14,10 @@ import {
 // Mensajes de instrucciones de juego sobre el canvas
 const instructionsMessage = document.getElementById('instructions-message');
 
+// Pantallas de fin de juego
+const successScreen = document.getElementById('success-screen');
+const restartSuccessBtn = document.getElementById('restart-success-btn');
+
 // Mensaje para hacer clic sobre la pantalla
 const timerDisplay = document.querySelector('#game-timer');
 
@@ -265,6 +269,16 @@ function handleToggleLightRoom() {
                     startFlickerEffect();
                 } else {
                     updateGameInstructions('finJuego');
+                    // Inicia la secuencia de fin de juego exitoso
+                    setTimeout(() => {
+                        if (successScreen) {
+                            document.exitPointerLock(); // Libera el cursor para poder hacer click
+                            canvas.style.display = 'none';
+                            instructionsMessage.style.display = 'none';
+                            interactionLabel.style.display = 'none';
+                            successScreen.style.display = 'flex';
+                        }
+                    }, 3000); // Espera 3 segundos
                 }
             } else {
                 // ESTADO: TERMICA ALTA -> BAJA
@@ -380,6 +394,13 @@ function updatePlayerBox(position) {
 
 // Inicializar la caja del jugador en su posición inicial
 updatePlayerBox(cameraHolder.position);
+
+// Listener para el botón de reinicio en la pantalla de éxito
+if (restartSuccessBtn) {
+    restartSuccessBtn.addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 
 // Eventos de teclado
 window.addEventListener('keydown', (e) => {
@@ -566,13 +587,10 @@ const INTERACTABLES = {
 // Interaccion con los carteles flotantes
 function checkInteraction() {
     const gameOverScreen = document.getElementById('game-over-screen');
+    const successScreen = document.getElementById('success-screen');
 
-    for (const key in flagInteraccions) {
-        flagInteraccions[key] = false;
-    }
-
-    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver
-    if (gameOverScreen.style.visibility === 'visible'){
+    // Ocultar los carteles flotantes si esta visible la pantalla de GamerOver o Éxito
+    if ((gameOverScreen && gameOverScreen.style.visibility === 'visible') || (successScreen && successScreen.style.display === 'flex')){
         if (interactionLabel) {
             interactionLabel.style.display = 'none';
         }
@@ -580,6 +598,10 @@ function checkInteraction() {
         return; 
     }
     
+    for (const key in flagInteraccions) {
+        flagInteraccions[key] = false;
+    }
+
     // Ocultar los carteles flotantes si se inicio la tarea
     if (taskActive) {
         if (interactionLabel) {
