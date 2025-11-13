@@ -16,7 +16,7 @@ const instructionsMessage = document.getElementById('instructions-message');
 
 // Pantallas de fin de juego
 const successScreen = document.getElementById('success-screen');
-const restartSuccessBtn = document.getElementById('restart-success-btn');
+const restartSuccessBtn = document.getElementById('restart-btn');
 
 // Mensaje para hacer clic sobre la pantalla
 const timerDisplay = document.querySelector('#game-timer');
@@ -396,10 +396,14 @@ function updatePlayerBox(position) {
 updatePlayerBox(cameraHolder.position);
 
 // Listener para el botón de reinicio en la pantalla de éxito
+
+
 if (restartSuccessBtn) {
-    restartSuccessBtn.addEventListener('click', () => {
-        window.location.reload();
-    });
+        restartSuccessBtn.addEventListener('click', handleRetry);
+    }
+
+function handleRetry() {
+    window.location.reload(); 
 }
 
 // Eventos de teclado

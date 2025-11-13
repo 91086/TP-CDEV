@@ -132,6 +132,24 @@ body {
     transform: scale(1.05);
 }
 
+#restart-btn {
+    font-size: 1.5rem;
+    padding: 15px 40px;
+    border: none;
+    border-radius: 8px;
+    background-color: #1d3557;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px #1d3557;
+}
+
+#restart-btn:hover {
+    background-color: #457b9d;
+    box-shadow: 0 0 20px #457b9d;
+    transform: scale(1.05);
+}
+
 #game-timer {
     position: absolute;
     top: 12px;  
